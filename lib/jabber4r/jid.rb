@@ -1,51 +1,47 @@
-# License: see LICENSE.txt
-#  Jabber4R - Jabber Instant Messaging Library for Ruby
-#  Copyright (C) 2002  Rich Kilmer <rich@infoether.com>
-# 
-
+# License: see LICENSE
+# Jabber4R - Jabber Instant Messaging Library for Ruby
+# Copyright (C) 2002  Rich Kilmer <rich@infoether.com>
 module Jabber
-
-  ##
   # The Jabber ID class is used to hold a parsed jabber identifier (account+host+resource)
-  #
   class JID
-  
     # The node (account)
     attr_accessor :node
-    
+
     # The resource id
     attr_accessor :resource
-    
+
     # The host name (or IP address)
     attr_accessor :host
-    
+
     def JID.to_jid(id)
       return id if id.kind_of? JID
       return JID.new(id)
     end
-    
-    #@@Pattern = /([^@""'\s:]+)\@([-.\w]+)\/?(.*)/
-    
-    ##
+
     # Constructs a JID from the supplied string of the format:
-    #    node@host[/resource] (e.g. "rich_kilmer@jabber.com/laptop")
+    # node@host[/resource] (e.g. "rich_kilmer@jabber.com/laptop")
     #
-    # id:: [String] The jabber id string to parse
+    # jid      - String the jabber id string to parse
+    # host     - String the host of jabber server (optional)
+    # resource - String the resource of jabber id (optional)
     #
-    def initialize(id)
-      at_loc = id.index('@')
-      slash_loc = id.index('/')
-      if at_loc.nil? and slash_loc.nil?
-        @host = id
-      end
-      if at_loc
-        @node = id[0,at_loc]
-        host_end = slash_loc ? slash_loc-(at_loc+1) : id.size-(at_loc+1)
-        @host = id[at_loc+1,host_end]
-        @resource = id[slash_loc+1, id.size] if slash_loc
-      end
+    # Examples
+    #
+    # jid = Jabber::JID.new("strech@localhost/attach")
+    # jid.node # => "strech"
+    # jid.host # => "localhost"
+    # jid.resource # => "attach"
+    #
+    # Returns nothing
+    def initialize(jid, host = nil, resource = nil)
+      raise ArgumentError, "Node can't be empty" if jid.to_s.empty?
+
+      @node, @host, @resource = self.class.parse(jid)
+
+      @host = host unless host.nil?
+      @resource = resource unless resource.nil?
     end
-    
+
     ##
     # Evalutes whether the node, resource and host are the same
     #
@@ -55,13 +51,13 @@ module Jabber
       return true if other.node==@node and other.resource==@resource and other.host==@host
       return false
     end
-    
+
     def same_account?(other)
       other = JID.to_jid(other)
       return true if other.node==@node  and other.host==@host
        return false
     end
-    
+
     ##
     # Removes the resource from this JID
     #
@@ -69,7 +65,7 @@ module Jabber
       @resource=nil
       return self
     end
-    
+
     ##
     # Returns the string ("node@host/resource") representation of this JID
     #
@@ -80,14 +76,42 @@ module Jabber
       result += ("/"+@resource) if @resource
       return result
     end
-    
+
     ##
     # Override #hash to hash based on the to_s method
     #
     def hash
       return to_s.hash
     end
-  end
-  
-end
 
+    private
+    # Internal: Parse jid string for node, host, resource
+    #
+    # jid - String jabber id
+    #
+    # Examples
+    #
+    # Jabber::JID.parse("strech@localhost/pewsource") # => ["strech", "localhost", "pewsource"]
+    #
+    # Rerturns Array
+    def self.parse(jid)
+      at_loc    = jid.index("@")
+      slash_loc = jid.index("/")
+
+      node = jid.dup
+      host = nil
+      resource = slash_loc.nil? ? nil : jid[slash_loc + 1, node.length]
+
+      if at_loc
+        node = jid[0, at_loc]
+
+        host_end = slash_loc.nil? ? jid.length - (at_loc + 1) : slash_loc - (at_loc + 1)
+        host = jid[at_loc + 1, host_end]
+      elsif slash_loc
+        node = jid[0, slash_loc]
+      end
+
+      [node, host, resource]
+    end
+  end
+end

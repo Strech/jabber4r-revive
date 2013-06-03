@@ -16,4 +16,3 @@ require "jabber4r/protocol"
 require "jabber4r/roster"
 require "jabber4r/jid"
 require "jabber4r/vcard"
-

@@ -1,6 +1,6 @@
 # Jabber4r::Revive
 
-Original (README)[http://rubydoc.info/gems/jabber4r/file/README]
+Original [README](http://rubydoc.info/gems/jabber4r/file/README)
 
 ## Installation
 

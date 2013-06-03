@@ -1,7 +1,7 @@
 # License: see LICENSE.txt
 #  Jabber4R - Jabber Instant Messaging Library for Ruby
 #  Copyright (C) 2002  Rich Kilmer <rich@infoether.com>
-# 
+#
 
 
 require 'singleton'
@@ -11,24 +11,24 @@ module Jabber
 
   class JabberConnectionException < RuntimeError
     attr_reader :data
-    
+
     def initialize(writing, data)
       @writing = writing
       @data = data
     end
-    
+
     def writing?
       @writing
     end
   end
-    
+
   ##
-  # The Protocol module contains helper methods for constructing 
+  # The Protocol module contains helper methods for constructing
   # Jabber protocol elements and classes that implement protocol
   # elements.
   #
   module Protocol
-  
+
     USE_PARSER = :rexml # either :rexml or :xmlparser
 
     ##
@@ -47,18 +47,18 @@ module Jabber
         Jabber::Protocol::REXMLJabberParser
       end
     end
-    
+
     ##
     # The connection class encapsulates the connection to the Jabber
     # service including managing the socket and controlling the parsing
     # of the Jabber XML stream.
     #
-    class Connection 
+    class Connection
       DISCONNECTED = 1
       CONNECTED = 2
-      
+
       attr_reader :host, :port, :status, :input, :output
-      
+
       def initialize(host, port=5222)
         @host = host
         @port = port
@@ -67,7 +67,7 @@ module Jabber
         @threadBlocks = {}
         @pollCounter = 10
       end
-      
+
       ##
       # Connects to the Jabber server through a TCP Socket and
       # starts the Jabber parser.
@@ -79,20 +79,20 @@ module Jabber
         @pollThread = Thread.new {poll}
         @status = CONNECTED
       end
-      
+
       ##
-      # Mounts a block to handle exceptions if they occur during the 
+      # Mounts a block to handle exceptions if they occur during the
       # poll send.  This will likely be the first indication that
       # the socket dropped in a Jabber Session.
       #
       def on_connection_exception(&block)
         @exception_block = block
       end
-      
+
       def parse_failure
         Thread.new {@exception_block.call if @exception_block}
       end
-      
+
       ##
       # Returns if this connection is connected to a Jabber service
       #
@@ -101,7 +101,7 @@ module Jabber
       def is_connected?
         return @status == CONNECTED
       end
-      
+
       ##
       # Returns if this connection is NOT connected to a Jabber service
       #
@@ -110,17 +110,17 @@ module Jabber
       def is_disconnected?
         return @status == DISCONNECTED
       end
-      
+
       ##
-      # Processes a received ParsedXMLElement and executes 
+      # Processes a received ParsedXMLElement and executes
       # registered thread blocks and filters against it.
       #
       # element:: [ParsedXMLElement] The received element
-      # 
+      #
       def receive(element)
         while @threadBlocks.size==0 && @filters.size==0
           sleep 0.1
-        end        
+        end
         Jabber::DEBUG && puts("RECEIVED:\n#{element.to_s}")
         @threadBlocks.each do |thread, proc|
           begin
@@ -145,7 +145,7 @@ module Jabber
           end
         end
       end
-      
+
       ##
       # Sends XML data to the socket and (optionally) waits
       # to process received data.
@@ -166,7 +166,7 @@ module Jabber
         end
         @pollCounter = 10
       end
-      
+
       ##
       # Starts a polling thread to send "keep alive" data to prevent
       # the Jabber connection from closing for inactivity.
@@ -186,24 +186,24 @@ module Jabber
           end
         end
       end
-      
+
       ##
       # Adds a filter block/proc to process received XML messages
       #
       # xml:: [String] The xml data to send
       # proc:: [Proc = nil] The optional proc
       # &block:: [Block] The optional block
-      #      
+      #
       def add_filter(ref, proc=nil, &block)
         block = proc if proc
         raise "Must supply a block or Proc object to the addFilter method" if block.nil?
         @filters[ref] = block
       end
-      
+
       def delete_filter(ref)
         @filters.delete(ref)
       end
-      
+
       ##
       # Closes the connection to the Jabber service
       #
@@ -213,7 +213,7 @@ module Jabber
         @socket.close if @socket
         @status = DISCONNECTED
       end
-    end  
+    end
 
     ##
     # Generates an open stream XML element
@@ -224,7 +224,7 @@ module Jabber
     def Protocol.gen_open_stream(host)
       return ('<?xml version="1.0" encoding="UTF-8" ?><stream:stream to="'+host+'" xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams">')
     end
-    
+
     ##
     # Generates an close stream XML element
     #
@@ -233,21 +233,21 @@ module Jabber
     def Protocol.gen_close_stream
       return "</stream:stream>"
     end
-    
+
     ##
-    # The presence class is used to construct presence messages to 
+    # The presence class is used to construct presence messages to
     # send to the Jabber service.
     #
     class Presence
       attr_accessor :to, :from, :id, :type
-      
+
       # The state to show (chat, xa, dnd, away)
       attr_accessor :show
-      
+
       # The status message
       attr_accessor :status
       attr_accessor :priority
-      
+
       ##
       # Constructs a Presence object w/the supplied id
       #
@@ -260,7 +260,7 @@ module Jabber
         @show = show if show
         @status = status if status
       end
-      
+
       ##
       # Generate a presence object for initial presence notification
       #
@@ -272,7 +272,7 @@ module Jabber
       def Presence.gen_initial(id, show=nil, status=nil)
         Presence.new(id, show, status)
       end
-    
+
       ##
       # Generate a presence object w/show="normal" (normal availability)
       #
@@ -283,7 +283,7 @@ module Jabber
       def Presence.gen_normal(id, status=nil)
         Presence.new(id, "normal", status)
       end
-    
+
       ##
       # Generate a presence object w/show="chat" (free for chat)
       #
@@ -294,7 +294,7 @@ module Jabber
       def Presence.gen_chat(id, status=nil)
         Presence.new(id, "chat", status)
       end
-    
+
       ##
       # Generate a presence object w/show="xa" (extended away)
       #
@@ -305,7 +305,7 @@ module Jabber
       def Presence.gen_xa(id, status=nil)
         Presence.new(id, "xa", status)
       end
-    
+
       ##
       # Generate a presence object w/show="dnd" (do not disturb)
       #
@@ -316,7 +316,7 @@ module Jabber
       def Presence.gen_dnd(id, status=nil)
         Presence.new(id, "dnd", status)
       end
-    
+
       ##
       # Generate a presence object w/show="away" (away from resource)
       #
@@ -327,7 +327,7 @@ module Jabber
       def Presence.gen_away(id, status=nil)
         Presence.new(id, "away", status)
       end
-    
+
       ##
       # Generate a presence object w/show="unavailable" (not free for chat)
       #
@@ -340,28 +340,28 @@ module Jabber
         p.type="unavailable"
         p
       end
-      
+
       def Presence.gen_new_subscription(to)
         p = Presence.new(Jabber.gen_random_id)
         p.type = "subscribe"
         p.to = to
         p
       end
-      
+
       def Presence.gen_accept_subscription(id, jid)
         p = Presence.new(id)
         p.type = "subscribed"
         p.to = jid
         p
       end
-      
+
       def Presence.gen_accept_unsubscription(id, jid)
         p = Presence.new(id)
         p.type = "unsubscribed"
         p.to = jid
         p
       end
-      
+
       ##
       # Generates the xml representation of this Presence object
       #
@@ -378,7 +378,7 @@ module Jabber
         e.add_child("priority") if @priority
         e.to_s
       end
-      
+
       ##
       # see _to_xml
       #
@@ -386,7 +386,7 @@ module Jabber
         to_xml
       end
     end
-    
+
     ##
     # A class used to build/parse IQ requests/responses
     #
@@ -396,7 +396,7 @@ module Jabber
       GET="get"
       SET="set"
       RESULT="result"
-      
+
       ##
       # Factory to build an IQ object from xml element
       #
@@ -415,7 +415,7 @@ module Jabber
         iq.data=element.query
         return iq
       end
-      
+
       ##
       # Default constructor to build an Iq object
       # session:: [Jabber::Session] The Jabber session instance
@@ -424,7 +424,7 @@ module Jabber
         @session=session
         @id=id
       end
-       
+
       ##
       # Return an IQ object that uses the jabber:iq:private namespace
       #
@@ -435,8 +435,8 @@ module Jabber
         iq.data=XMLElement.new(ename,{'xmlns' => ns});
         return iq
       end
-      
-      
+
+
       ##
       # Generates an IQ roster request XML element
       #
@@ -450,7 +450,7 @@ module Jabber
         return iq
         #return XMLElement.new("iq", {"type"=>"get", "id"=>id}).add_child("query", {"xmlns"=>"jabber:iq:roster"}).to_s
       end
-      
+
       ##
       # Generates an IQ authortization request XML element
       #
@@ -465,13 +465,13 @@ module Jabber
         iq = Iq.new(session, id)
         iq.type = "set"
         iq.xmlns = "jabber:iq:register"
-        iq.data = XMLElement.new("username").add_data(username).to_s 
+        iq.data = XMLElement.new("username").add_data(username).to_s
         iq.data << XMLElement.new("password").add_data(password).to_s
         iq.data << XMLElement.new("email").add_data(email).to_s
         iq.data << XMLElement.new("name").add_data(name).to_s
         return iq
       end
-      
+
       ##
       # Generates an IQ Roster Item add request XML element
       #
@@ -488,7 +488,7 @@ module Jabber
         iq.data = XMLElement.new("item").add_attribute("jid", jid).add_attribute("name", name).to_s
         return iq
       end
-      
+
       ##
       # Generates an IQ authortization request XML element
       #
@@ -502,13 +502,13 @@ module Jabber
         iq = Iq.new(session, id)
         iq.type = "set"
         iq.xmlns = "jabber:iq:auth"
-        iq.data = XMLElement.new("username").add_data(username).to_s 
+        iq.data = XMLElement.new("username").add_data(username).to_s
         iq.data << XMLElement.new("password").add_data(password).to_s
         iq.data << XMLElement.new("resource").add_data(resource).to_s
         return iq
         #element = XMLElement.new("iq", {"type"=>"set", "id"=>id}).add_child("query", {"xmlns"=>"jabber:iq:auth"}).add_child("username").add_data(username).to_parent.add_child("password").add_data(password).to_parent.add_child("resource").add_data(resource).to_parent.to_s
       end
-      
+
       ##
       # Generates an IQ digest authortization request XML element
       #
@@ -522,13 +522,13 @@ module Jabber
         iq = Iq.new(session, id)
         iq.type = "set"
         iq.xmlns = "jabber:iq:auth"
-        iq.data = XMLElement.new("username").add_data(username).to_s 
+        iq.data = XMLElement.new("username").add_data(username).to_s
         iq.data << XMLElement.new("digest").add_data(digest).to_s
         iq.data << XMLElement.new("resource").add_data(resource).to_s
         return iq
         #return XMLElement.new("iq", {"type"=>"set", "id"=>id}).add_child("query", {"xmlns"=>"jabber:iq:auth"}).add_child("username").add_data(username).to_parent.add_child("digest").add_data(digest).to_parent.add_child("resource").add_data(resource).to_parent.to_s
       end
-      
+
       ##
       # Generates an IQ out of bounds XML element
       #
@@ -546,7 +546,7 @@ module Jabber
         return iq
         #return XMLElement.new("iq", {"type"=>"set"}).add_child("query", {"xmlns"=>"jabber:iq:oob"}).add_child("url").add_data(url).to_parent.add_child("desc").add_data(data).to_parent.to_s
       end
-  
+
       ##
       # Generates an VCard request XML element
       #
@@ -562,13 +562,13 @@ module Jabber
         return iq
         #return XMLElement.new("iq", {"type"=>"get", "id"=>id, "to"=>to}).add_child("query", {"xmlns"=>"vcard-temp"}).to_s
       end
-        
-      
-      
-       
+
+
+
+
       ##
       # Sends the IQ to the Jabber service for delivery
-      # 
+      #
       # wait:: [Boolean = false] Wait for reply before return?
       # &block:: [Block] A block to process the message replies
       #
@@ -576,7 +576,7 @@ module Jabber
         if wait
           iq = nil
           blockedThread = Thread.current
-          @session.connection.send(self.to_s, block) do |je| 
+          @session.connection.send(self.to_s, block) do |je|
             if je.element_tag == "iq" and je.attr_id == @id
               je.consume_element
               iq = Iq.from_element(@session, je)
@@ -584,12 +584,12 @@ module Jabber
             end
           end
           Thread.stop
-          rturn iq
+          return iq
         else
           @session.connection.send(self.to_s, block) if @session
         end
       end
-      
+
       ##
       # Builds a reply to an existing Iq
       #
@@ -603,7 +603,7 @@ module Jabber
         @is_reply = true
         return iq
       end
-     
+
       ##
       # Generates XML that complies with the Jabber protocol for
       # sending the Iq through the Jabber service.
@@ -622,16 +622,16 @@ module Jabber
         end
         return elem.to_s
       end
-      
+
       ##
       # see to_xml
       #
       def to_s
         to_xml
       end
-      
+
     end
-    
+
     class Message
       attr_accessor :to, :from, :id, :type, :body, :xhtml, :subject, :thread, :x, :oobData, :errorcode, :error
       NORMAL = "normal"
@@ -639,7 +639,7 @@ module Jabber
       CHAT="chat"
       GROUPCHAT="groupchat"
       HEADLINE="headline"
-      
+
       ##
       # Factory to build a Message from an XMLElement
       #
@@ -660,7 +660,7 @@ module Jabber
         message.session=session
         return message
       end
-    
+
       ##
       # Creates a Message
       #
@@ -673,7 +673,7 @@ module Jabber
         @to = to if to.kind_of? Jabber::JID
         @type = type
       end
-      
+
       ##
       # Chaining method...sets the body of the message
       #
@@ -684,7 +684,7 @@ module Jabber
         @body = body.gsub(/[&]/, '&amp;').gsub(/[<]/, '&lt;').gsub(/[']/, '&apos;')
         self
       end
-      
+
       ##
       # Chaining method...sets the subject of the message
       #
@@ -695,7 +695,7 @@ module Jabber
         @subject = subject.gsub(/[&]/, '&amp;').gsub(/[<]/, '&lt;').gsub(/[']/, '&apos;')
         self
       end
-      
+
       ##
       # Chaining method...sets the XHTML body of the message
       #
@@ -706,7 +706,7 @@ module Jabber
         @xhtml=xhtml
         self
       end
-       
+
       ##
       # Chaining method...sets the thread of the message
       #
@@ -717,7 +717,7 @@ module Jabber
         @thread = thread
         self
       end
-      
+
       ##
       # Chaining method...sets the OOB data of the message
       #
@@ -728,7 +728,7 @@ module Jabber
         @oobData = data
         self
       end
-      
+
       ##
       # Chaining method...sets the extended data of the message
       #
@@ -739,7 +739,7 @@ module Jabber
         @x = x
         self
       end
-      
+
       ##
       # Sets an error code to be returned(chaining method)
       #
@@ -747,14 +747,14 @@ module Jabber
       # reason:: [String] Why the error was reported
       # return:: [Jabber::Protocol::Message] The current Message object
       #
-      
+
       def set_error(code,reason)
        @errorcode=code
        @error=reason
        @type="error"
        self
       end
-      
+
       ##
       # Convenience method for send(true)
       #
@@ -764,10 +764,10 @@ module Jabber
       def request(ttl=nil, &block)
         send(true, ttl, &block)
       end
-      
+
       ##
       # Sends the message to the Jabber service for delivery
-      # 
+      #
       # wait:: [Boolean = false] Wait for reply before return?
       # ttl:: [Integer = nil] The time (in seconds) to wait for a reply before assuming nil
       # &block:: [Block] A block to process the message replies
@@ -785,7 +785,7 @@ module Jabber
               blockedThread.wakeup
             }
           end
-          @session.connection.send(self.to_s, block) do |je| 
+          @session.connection.send(self.to_s, block) do |je|
             if je.element_tag == "message" and je.thread.element_data == @thread
               je.consume_element
               message = Message.from_element(@session, je)
@@ -802,7 +802,7 @@ module Jabber
           @session.connection.send(self.to_s, block) if @session
         end
       end
-      
+
       ##
       # Sets the session instance
       #
@@ -813,7 +813,7 @@ module Jabber
         @session = session
         self
       end
-      
+
       ##
       # Builds a reply to an existing message by setting:
       # 1. to = from
@@ -834,7 +834,7 @@ module Jabber
         @is_reply = true
         return message
       end
-      
+
       ##
       # Generates XML that complies with the Jabber protocol for
       # sending the message through the Jabber service.
@@ -861,24 +861,24 @@ module Jabber
         elem.add_xml(@x.to_s) if @x
         return elem.to_s
       end
-      
+
       ##
       # see to_xml
       #
       def to_s
         to_xml
       end
-      
+
     end
-    
+
     ##
     # Utility class to create valid XML strings
     #
     class XMLElement
-    
+
       # The parent XMLElement
       attr_accessor :parent
-      
+
       ##
       # Construct an XMLElement for the supplied tag and attributes
       #
@@ -890,7 +890,7 @@ module Jabber
         @attributes = attributes
         @data = ""
       end
-      
+
       ##
       # Adds an attribute to this element
       #
@@ -902,7 +902,7 @@ module Jabber
         @attributes[attrib]=value
         self
       end
-      
+
       ##
       # Adds data to this element
       #
@@ -913,7 +913,7 @@ module Jabber
         @data += data.to_s
         self
       end
-      
+
       ##
       # Sets the namespace for this tag
       #
@@ -924,7 +924,7 @@ module Jabber
         @tag+=":#{ns}"
         self
       end
-      
+
       ##
       # Adds cdata to this element
       #
@@ -935,16 +935,16 @@ module Jabber
         @data += "<![CDATA[#{cdata.to_s}]]>"
         self
       end
-      
+
       ##
       # Returns the parent element
-      # 
+      #
       # return:: [Jabber::Protocol::XMLElement] The parent XMLElement
       #
       def to_parent
         @parent
       end
-      
+
       ##
       # Adds a child to this element of the supplied tag
       #
@@ -958,7 +958,7 @@ module Jabber
         @elements << child
         return child
       end
-      
+
       ##
       # Adds arbitrary XML data to this object
       #
@@ -967,7 +967,7 @@ module Jabber
       def add_xml(xml)
         @xml = xml
       end
-      
+
       ##
       # Recursively builds the XML string by traversing this element's
       # children.
@@ -995,7 +995,7 @@ module Jabber
         result+="\n" if format
         return result
       end
-      
+
       ##
       # Climbs to the top of this elements parent tree and then returns
       # the to_xml XML string.
@@ -1007,19 +1007,19 @@ module Jabber
         return to_xml(true)
       end
     end
-    
+
     ##
     # This class is constructed from XML data elements that are received from
     # the Jabber service.
     #
-    class ParsedXMLElement  
-      
+    class ParsedXMLElement
+
       ##
       # This class is used to return nil element values to prevent errors (and
       # reduce the number of checks.
       #
       class NilParsedXMLElement
-      
+
         ##
         # Override to return nil
         #
@@ -1028,7 +1028,7 @@ module Jabber
         def method_missing(methId, *args)
           return nil
         end
-        
+
         ##
         # Evaluate as nil
         #
@@ -1037,7 +1037,7 @@ module Jabber
         def nil?
           return true
         end
-        
+
         ##
         # Return a zero count
         #
@@ -1046,22 +1046,22 @@ module Jabber
         def count
           0
         end
-        
+
         include Singleton
       end
-      
+
       # The <tag> as String
       attr_reader :element_tag
-      
+
       # The parent ParsedXMLElement
       attr_reader :element_parent
-      
+
       # A hash of ParsedXMLElement children
       attr_reader :element_children
-      
+
       # The data <tag>data</tag> for a tag
       attr_reader :element_data
-      
+
       ##
       # Construct an instance for the given tag
       #
@@ -1075,11 +1075,11 @@ module Jabber
         @attributes = {}
         @element_consumed = false
       end
-      
+
       ##
       # Add the attribute to the element
       #   <tag name="value">data</tag>
-      # 
+      #
       # name:: [String] The attribute name
       # value:: [String] The attribute value
       # return:: [Jabber::Protocol::ParsedXMLElement] self for chaining
@@ -1088,7 +1088,7 @@ module Jabber
         @attributes[name]=value
         self
       end
-      
+
       ##
       # Factory to build a child element from this element with the given tag
       #
@@ -1101,17 +1101,17 @@ module Jabber
         @element_children[tag] << child
         return child
       end
-      
+
       ##
       # When an xml is received from the Jabber service and a ParsedXMLElement is created,
-      # it is propogated to all filters and listeners.  Any one of those can consume the element 
+      # it is propogated to all filters and listeners.  Any one of those can consume the element
       # to prevent its propogation to other filters or listeners. This method marks the element
       # as consumed.
       #
       def consume_element
         @element_consumed = true
       end
-      
+
       ##
       # Checks if the element is consumed
       #
@@ -1120,7 +1120,7 @@ module Jabber
       def element_consumed?
         @element_consumed
       end
-      
+
       ##
       # Appends data to the element
       #
@@ -1132,7 +1132,7 @@ module Jabber
         @element_data += data
         self
       end
-      
+
       ##
       # Calls the parent's element_children (hash) index off of this elements
       # tag and gets the supplied index.  In this sense it gets its sibling based
@@ -1144,7 +1144,7 @@ module Jabber
       def [](number)
         return @element_parent.element_children[@element_tag][number] if @element_parent
       end
-      
+
       ##
       # Returns the count of siblings with this element's tag
       #
@@ -1154,21 +1154,21 @@ module Jabber
         return @element_parent.element_children[@element_tag].size if @element_parent
         return 0
       end
-      
+
       ##
       # see _count
       #
       def size
         count
       end
-      
+
       ##
       # Overrides to allow for directly accessing child elements
       # and attributes.  If prefaced by attr_ it looks for an attribute
       # that matches or checks for a child with a tag that matches
-      # the method name.  If no match occurs, it returns a 
+      # the method name.  If no match occurs, it returns a
       # NilParsedXMLElement (singleton) instance.
-      # 
+      #
       # Example:: <alpha number="1"><beta number="2">Beta Data</beta></alpha>
       #
       #  element.element_tag #=> alpha
@@ -1183,8 +1183,8 @@ module Jabber
           list = @element_children[tag]
           return list[0] if list
           return NilParsedXMLElement.instance
-      end  
-      
+      end
+
       ##
       # Returns the valid XML as a string
       #
@@ -1196,7 +1196,7 @@ module Jabber
           if @element_children.size>0 or @element_data
             result += ">"
           else
-            result += "/>" 
+            result += "/>"
           end
           result += @element_data if @element_data
           @element_children.each_value {|array| array.each {|je| result += je.to_s} }
@@ -1208,7 +1208,7 @@ module Jabber
         end
       end
     end
-    
+
     if USE_PARSER == :xmlparser
       require 'xmlparser'
       ##
@@ -1217,10 +1217,10 @@ module Jabber
       # instance.
       #
       class ExpatJabberParser
-        
+
         # status if the parser is started
         attr_reader :started
-        
+
         ##
         # Constructs a parser for the supplied stream (socket input)
         #
@@ -1234,21 +1234,21 @@ module Jabber
           end
           @listener = listener
         end
-        
+
         ##
         # Begins parsing the XML stream and does not return until
         # the stream closes.
         #
         def parse
           @started = false
-  
+
           parser = XMLParser.new("UTF-8")
           def parser.unknownEncoding(e)
             raise "Unknown encoding #{e.to_s}"
           end
           def parser.default
           end
-          
+
           begin
             parser.parse(@stream) do |type, name, data|
               begin
@@ -1260,7 +1260,7 @@ module Jabber
                       data.each {|key, value| openstream.add_attribute(key, value)}
                       @listener.receive(openstream)
                       @started = true
-                    else 
+                    else
                       if @current.nil?
                         @current = ParsedXMLElement.new(name.clone)
                       else
@@ -1293,7 +1293,7 @@ module Jabber
       require 'rexml/document'
       require 'rexml/parsers/sax2parser'
       require 'rexml/source'
-      
+
       ##
       # The REXMLJabberParser uses REXML to parse the incoming XML stream
       # of the Jabber protocol and fires ParsedXMLElements at the Connection
@@ -1302,7 +1302,7 @@ module Jabber
       class REXMLJabberParser
         # status if the parser is started
         attr_reader :started
-        
+
         ##
         # Constructs a parser for the supplied stream (socket input)
         #
@@ -1311,7 +1311,7 @@ module Jabber
         #
         def initialize(stream, listener)
           @stream = stream
-          
+
           # this hack fixes REXML version "2.7.3" and "2.7.4"
           if REXML::Version=="2.7.3" || REXML::Version=="2.7.4"
             def @stream.read(len=nil)
@@ -1328,7 +1328,7 @@ module Jabber
               super(">")
             end
           end
-          
+
           @listener = listener
           @current = nil
         end
@@ -1340,15 +1340,15 @@ module Jabber
         def parse
           @started = false
           begin
-            parser = REXML::Parsers::SAX2Parser.new @stream 
+            parser = REXML::Parsers::SAX2Parser.new @stream
             parser.listen( :start_element ) do |uri, localname, qname, attributes|
               case qname
               when "stream:stream"
                 openstream = ParsedXMLElement.new(qname)
-                attributes.each { |attr, value| openstream.add_attribute(attr, value) }              
+                attributes.each { |attr, value| openstream.add_attribute(attr, value) }
                 @listener.receive(openstream)
                 @started = true
-              else 
+              else
                 if @current.nil?
                   @current = ParsedXMLElement.new(qname)
                 else
@@ -1379,6 +1379,6 @@ module Jabber
         end
       end
     end # USE_PARSER
-  end 
+  end
 end
 

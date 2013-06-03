@@ -32,6 +32,7 @@ module Jabber
     # jid.host # => "localhost"
     # jid.resource # => "attach"
     #
+    # Raises ArgumentError
     # Returns nothing
     def initialize(jid, host = nil, resource = nil)
       raise ArgumentError, "Node can't be empty" if jid.to_s.empty?

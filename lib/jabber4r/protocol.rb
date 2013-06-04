@@ -405,14 +405,22 @@ module Jabber
       # return:: [Jabber::Protocol::Iq] The newly created Iq object
       #
       def self.from_element(session, element)
-        iq = Iq.new(session)
+        iq = new(session)
+
         iq.from = Jabber::JID.new(element.attr_from) if element.attr_from
-        iq.to = Jabber::JID.new(element.attr_to) if element.attr_to
-        iq.type = element.attr_type
+        iq.to   = Jabber::JID.new(element.attr_to) if element.attr_to
+
         iq.id = element.attr_id
-        iq.session=session
-        iq.xmlns=element.query.attr_xmlns
-        iq.data=element.query
+        iq.type = element.attr_type
+        iq.xmlns = element.query.attr_xmlns
+        iq.data  = element.query
+        iq.session = session
+
+        if element.attr_type = "error"
+          iq.error = element.error
+          iq.errorcode = element.error.attr_code
+        end
+
         return iq
       end
 

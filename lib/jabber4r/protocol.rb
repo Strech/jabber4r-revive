@@ -404,7 +404,7 @@ module Jabber
       # element:: [Jabber::Protocol::ParsedXMLElement] The received XML object
       # return:: [Jabber::Protocol::Iq] The newly created Iq object
       #
-      def Iq.from_element(session, element)
+      def self.from_element(session, element)
         iq = Iq.new(session)
         iq.from = Jabber::JID.new(element.attr_from) if element.attr_from
         iq.to = Jabber::JID.new(element.attr_to) if element.attr_to
@@ -428,7 +428,7 @@ module Jabber
       ##
       # Return an IQ object that uses the jabber:iq:private namespace
       #
-      def Iq.get_private(session,id,ename,ns)
+      def self.get_private(session,id,ename,ns)
         iq=Iq.new(session,id)
         iq.type="get"
         iq.xmlns="jabber:iq:private"
@@ -443,7 +443,7 @@ module Jabber
       # id:: [String] The message id
       # return:: [String] The XML data to send
       #
-      def Iq.gen_roster(session, id)
+      def self.gen_roster(session, id)
         iq = Iq.new(session, id)
         iq.type = "get"
         iq.xmlns = "jabber:iq:roster"
@@ -461,7 +461,7 @@ module Jabber
       # name:: [String] The full name
       # return:: [String] The XML data to send
       #
-      def Iq.gen_registration(session, id, username, password, email, name)
+      def self.gen_registration(session, id, username, password, email, name)
         iq = Iq.new(session, id)
         iq.type = "set"
         iq.xmlns = "jabber:iq:register"
@@ -481,7 +481,7 @@ module Jabber
       # name:: [String] The full name
       # return:: [String] The XML data to send
       #
-      def Iq.gen_add_rosteritem(session, id, jid, name)
+      def self.gen_add_rosteritem(session, id, jid, name)
         iq = Iq.new(session, id)
         iq.type = "set"
         iq.xmlns = "jabber:iq:roster"
@@ -498,7 +498,7 @@ module Jabber
       # resource:: [String] The resource to bind this session to
       # return:: [String] The XML data to send
       #
-      def Iq.gen_auth(session, id, username, password, resource)
+      def self.gen_auth(session, id, username, password, resource)
         iq = Iq.new(session, id)
         iq.type = "set"
         iq.xmlns = "jabber:iq:auth"
@@ -518,7 +518,7 @@ module Jabber
       # resource:: [String] The resource to bind this session to
       # return:: [String] The XML data to send
       #
-      def Iq.gen_auth_digest(session, id, username, digest, resource)
+      def self.gen_auth_digest(session, id, username, digest, resource)
         iq = Iq.new(session, id)
         iq.type = "set"
         iq.xmlns = "jabber:iq:auth"
@@ -537,7 +537,7 @@ module Jabber
       # desc:: [String=""] The description of the data
       # return:: [String] The XML data to send
       #
-      def Iq.gen_oob(session, to, url, desc="")
+      def self.gen_oob(session, to, url, desc="")
         iq = Iq.new(session, nil)
         iq.type = "set"
         iq.xmlns = "jabber:iq:oob"
@@ -554,7 +554,7 @@ module Jabber
       # to:: [JID] The jabber id of the account to get the VCard for
       # return:: [String] The XML data to send
       #
-      def Iq.gen_vcard(session, id, to)
+      def self.gen_vcard(session, id, to)
         iq = Iq.new(session, id)
         iq.xmlns = "vcard-temp"
         iq.type = "get"

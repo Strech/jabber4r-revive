@@ -57,4 +57,20 @@ describe Jabber::JID do
       end
     end
   end
+
+  describe "strip" do
+    subject { described_class.new(args).strip }
+
+    context "when JID has no resource" do
+      let(:args) { "strech@localhost" }
+
+      its(:to_s) { should eq "strech@localhost" }
+    end
+
+    context "when JID has no resource" do
+      let(:args) { "strech@localhost/pewpew" }
+
+      its(:to_s) { should eq "strech@localhost" }
+    end
+  end
 end

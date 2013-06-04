@@ -85,6 +85,14 @@ module Jabber
       return to_s.hash
     end
 
+    # Public: Возвращает JID у которого отсутствует ресурс
+    # TODO: Будет перенесено в гем
+    #
+    # Returns XMPP::JID
+    def strip
+      JID.new(@node, @host)
+    end
+
     private
     # Internal: Parse jid string for node, host, resource
     #

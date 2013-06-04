@@ -579,7 +579,7 @@ module Jabber
           @session.connection.send(self.to_s, block) do |je|
             if je.element_tag == "iq" and je.attr_id == @id
               je.consume_element
-              iq = Iq.from_element(@session, je)
+              iq = self.class.from_element(@session, je)
               blockedThread.wakeup
             end
           end

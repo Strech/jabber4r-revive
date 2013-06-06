@@ -1,4 +1,4 @@
-# Jabber4r::Revive
+# Jabber4r (revive)
 
 Original [README](http://rubydoc.info/gems/jabber4r/file/README) and original [jabber4r web-site](http://jabber4r.rubyforge.org/)
 

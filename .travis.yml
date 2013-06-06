@@ -6,4 +6,4 @@ branches:
   only:
     - master
 bundler_args: --without development
-script: rspec
+script: bundle exec rspec

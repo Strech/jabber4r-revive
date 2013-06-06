@@ -231,7 +231,7 @@ module Jabber
     def add(jid, subscription, name, group=nil)
       if jid.kind_of? String
         jid = JID.new(jid) 
-        jid.strip_resource
+        jid.strip!
       elsif jid.kind_of? JID
         jid = JID.new(jid.node+"@"+jid.host)
       else
@@ -255,7 +255,7 @@ module Jabber
     def [](jid)
       if jid.kind_of? String
         jid = JID.new(jid) 
-        jid.strip_resource
+        jid.strip!
       elsif jid.kind_of? JID
         jid = JID.new(jid.node+"@"+jid.host)
       else
@@ -272,7 +272,7 @@ module Jabber
     def delete(jid)
       if jid.kind_of? String
         jid = JID.new(jid) 
-        jid.strip_resource
+        jid.strip!
       elsif jid.kind_of? JID
         jid = JID.new(jid.node+"@"+jid.host)
       else

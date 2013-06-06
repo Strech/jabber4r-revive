@@ -71,6 +71,31 @@ describe Jabber::JID do
     end
   end
 
+  describe "#strip!" do
+    subject { described_class.new(args).strip! }
+
+    context "when JID has no resource" do
+      let(:args) { "strech@localhost" }
+
+      its(:to_s) { should eq "strech@localhost" }
+      its(:resource) { should be_nil }
+    end
+
+    context "when JID has no resource" do
+      let(:args) { "strech@localhost/pewpew" }
+
+      its(:to_s) { should eq "strech@localhost" }
+      its(:resource) { should be_nil }
+    end
+  end
+
+  describe "#hash" do
+    let(:hash) { "strech@pewpew/one".hash }
+    subject { described_class.new "strech@pewpew/one" }
+
+    its(:hash) { should eq hash }
+  end
+
   describe "#to_s" do
     context "when only host and domain exists" do
       subject { described_class.new("strech", "localhost").to_s }
@@ -82,6 +107,24 @@ describe Jabber::JID do
       subject { described_class.new("strech", "localhost", "attach-resource").to_s }
 
       it { should eq "strech@localhost/attach-resource" }
+    end
+  end
+
+  describe "#==" do
+    subject { jid1 == jid2 }
+
+    context "when jids are equal" do
+      let(:jid1) { described_class.new "strech@localhost" }
+      let(:jid2) { described_class.new "strech@localhost" }
+
+      it { should be_true }
+    end
+
+    context "when jids are not equal" do
+      let(:jid1) { described_class.new "strech@localhost" }
+      let(:jid2) { described_class.new "strech@localhost/resource1" }
+
+      it { should be_false }
     end
   end
 end

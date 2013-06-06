@@ -1,14 +1,11 @@
+# coding: utf-8
 require "spec_helper"
 
 describe Jabber::JID do
   describe "#initialize" do
     context "when need parse jid from string" do
       context "when only node given" do
-        subject { described_class.new "user" }
-
-        its(:node) { should eq "user" }
-        its(:host) { should be_nil }
-        its(:resource) { should be_nil }
+        it { expect { described_class.new "user" }.to raise_error ArgumentError }
       end
 
       context "when node and host given" do
@@ -58,7 +55,7 @@ describe Jabber::JID do
     end
   end
 
-  describe "strip" do
+  describe "#strip" do
     subject { described_class.new(args).strip }
 
     context "when JID has no resource" do
@@ -71,6 +68,20 @@ describe Jabber::JID do
       let(:args) { "strech@localhost/pewpew" }
 
       its(:to_s) { should eq "strech@localhost" }
+    end
+  end
+
+  describe "#to_s" do
+    context "when only host and domain exists" do
+      subject { described_class.new("strech", "localhost").to_s }
+
+      it { should eq "strech@localhost" }
+    end
+
+    context "when only host and domain exists" do
+      subject { described_class.new("strech", "localhost", "attach-resource").to_s }
+
+      it { should eq "strech@localhost/attach-resource" }
     end
   end
 end

@@ -1,9 +1,14 @@
+# coding: utf-8
+
 # License: see LICENSE
 # Jabber4R - Jabber Instant Messaging Library for Ruby
 # Copyright (C) 2002  Rich Kilmer <rich@infoether.com>
+
 module Jabber
   # The Jabber ID class is used to hold a parsed jabber identifier (account+host+resource)
   class JID
+    PATTERN = /^(?:(?<node>[^@]*)@)??(?<host>[^@\/]*)(?:\/(?<resource>.*?))?$/.freeze
+
     # The node (account)
     attr_accessor :node
 
@@ -38,9 +43,12 @@ module Jabber
       raise ArgumentError, "Node can't be empty" if jid.to_s.empty?
 
       @node, @host, @resource = self.class.parse(jid)
+      @node, @host = @host, nil if @node.nil? && @host
 
       @host = host unless host.nil?
       @resource = resource unless resource.nil?
+
+      raise ArgumentError, "Couldn't create JID without host" if @host.to_s.empty?
     end
 
     ##
@@ -67,30 +75,25 @@ module Jabber
       return self
     end
 
-    ##
     # Returns the string ("node@host/resource") representation of this JID
     #
     # return:: [String] String form of JID
     #
     def to_s
-      result = (@node.to_s+"@"+@host.to_s)
-      result += ("/"+@resource) if @resource
-      return result
+      ["#{node}@#{host}", resource].compact.join "/"
     end
 
-    ##
     # Override #hash to hash based on the to_s method
     #
     def hash
       return to_s.hash
     end
 
-    # Public: Возвращает JID у которого отсутствует ресурс
-    # TODO: Будет перенесено в гем
+    # Public: Strip resource from jid and return new object
     #
-    # Returns XMPP::JID
+    # Returns Jabber::JID
     def strip
-      JID.new(@node, @host)
+      self.class.new(@node, @host)
     end
 
     private
@@ -100,27 +103,12 @@ module Jabber
     #
     # Examples
     #
-    # Jabber::JID.parse("strech@localhost/pewsource") # => ["strech", "localhost", "pewsource"]
+    # result = Jabber::JID.parse("strech@localhost/pewsource")
+    # result # => ["strech", "localhost", "pewsource"]
     #
     # Rerturns Array
     def self.parse(jid)
-      at_loc    = jid.index("@")
-      slash_loc = jid.index("/")
-
-      node = jid.dup
-      host = nil
-      resource = slash_loc.nil? ? nil : jid[slash_loc + 1, node.length]
-
-      if at_loc
-        node = jid[0, at_loc]
-
-        host_end = slash_loc.nil? ? jid.length - (at_loc + 1) : slash_loc - (at_loc + 1)
-        host = jid[at_loc + 1, host_end]
-      elsif slash_loc
-        node = jid[0, slash_loc]
-      end
-
-      [node, host, resource]
+      jid.match(PATTERN).captures
     end
   end
 end

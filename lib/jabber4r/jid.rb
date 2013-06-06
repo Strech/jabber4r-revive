@@ -18,9 +18,15 @@ module Jabber
     # The host name (or IP address)
     attr_accessor :host
 
-    def JID.to_jid(id)
-      return id if id.kind_of? JID
-      return JID.new(id)
+    # Public: Convert something to Jabber::JID
+    #
+    # jid - [String|Jabber::JID] the jid of future Jabber::JID
+    #
+    # Returns Jabber::JID
+    def self.to_jid(jid)
+      return jid if jid.kind_of? self
+
+      new jid
     end
 
     # Constructs a JID from the supplied string of the format:
@@ -60,10 +66,15 @@ module Jabber
       jid.to_s == self.to_s
     end
 
-    def same_account?(other)
-      other = JID.to_jid(other)
-      return true if other.node==@node  and other.host==@host
-       return false
+    # Public: Compare accounts without resources
+    #
+    # jid - Jabber::JID the other jabber id
+    #
+    # Returns boolean
+    def same?(jid)
+      other_jid = self.class.to_jid(jid)
+
+      other_jid.node == node && other_jid.host == host
     end
 
     # Public: Strip resource from jid and return new object

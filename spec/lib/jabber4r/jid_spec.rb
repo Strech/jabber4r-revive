@@ -127,4 +127,72 @@ describe Jabber::JID do
       it { should be_false }
     end
   end
+
+  describe "#same?" do
+    subject { jid1.same? jid2 }
+
+    context "when jids are equal" do
+      context "when jid1 and jid2 has no resource" do
+        let(:jid1) { described_class.new "strech@localhost" }
+        let(:jid2) { described_class.new "strech@localhost" }
+
+        it { should be_true }
+      end
+
+      context "when jid1 has resource, but jid2 not" do
+        let(:jid1) { described_class.new "strech@localhost/pewpew" }
+        let(:jid2) { described_class.new "strech@localhost" }
+
+        it { should be_true }
+      end
+
+      context "when jid1 and jid2 has resources" do
+        let(:jid1) { described_class.new "strech@localhost/pewpew" }
+        let(:jid2) { described_class.new "strech@localhost/hola" }
+
+        it { should be_true }
+      end
+    end
+
+    context "when jids are not equal" do
+      context "when jid1 and jid2 has no resource" do
+        let(:jid1) { described_class.new "strech@localhost" }
+        let(:jid2) { described_class.new "strech@gmail.com" }
+
+        it { should be_false }
+      end
+
+      context "when jid1 has resource, but jid2 not" do
+        let(:jid1) { described_class.new "strech@localhost/pewpew" }
+        let(:jid2) { described_class.new "strech@gmail.com" }
+
+        it { should be_false }
+      end
+
+      context "when jid1 and jid2 has resources" do
+        let(:jid1) { described_class.new "strech@localhost/pewpew" }
+        let(:jid2) { described_class.new "strech@gmail.com/hola" }
+
+        it { should be_false }
+      end
+    end
+  end
+
+  describe "::to_jid" do
+    subject { Jabber::JID.to_jid jid }
+
+    context "when jid is a Jabber::JID" do
+      let(:jid) { described_class.new "strech@localhost" }
+
+      its(:object_id) { should eq jid.object_id }
+      its(:to_s) { should eq "strech@localhost" }
+    end
+
+    context "when jid is a String" do
+      let(:jid) { "strech@localhost/resource" }
+
+      its(:object_id) { should_not eq jid.object_id }
+      its(:to_s) { should eq "strech@localhost/resource" }
+    end
+  end
 end

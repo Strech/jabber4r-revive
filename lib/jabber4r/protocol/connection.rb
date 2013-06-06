@@ -21,6 +21,7 @@ module Jabber::Protocol
       @filters = {}
       @threadBlocks = {}
       @pollCounter = 10
+      @mutex = Mutex.new
     end
 
     ##
@@ -66,60 +67,26 @@ module Jabber::Protocol
       return @status == DISCONNECTED
     end
 
-    ##
-    # Processes a received ParsedXMLElement and executes
-    # registered thread blocks and filters against it.
+    # Receiving xml element, and processing it
+    # NOTE: Synchonized by Mutex
     #
-    # element:: [ParsedXMLElement] The received element
+    # xml_element - ParsedXMLElement the received from socket xml element
     #
-    def receive(element)
-      while @threadBlocks.size==0 && @filters.size==0
-        sleep 0.1
-      end
-      Jabber::DEBUG && puts("RECEIVED:\n#{element.to_s}")
-      @threadBlocks.each do |thread, proc|
-        begin
-          proc.call(element)
-          if element.element_consumed?
-            @threadBlocks.delete(thread)
-            thread.wakeup if thread.alive?
-            return
-          end
-        rescue Exception => error
-          puts error.to_s
-          puts error.backtrace.join("\n")
-        end
-      end
-      @filters.each_value do |proc|
-        begin
-          proc.call(element)
-          return if element.element_consumed?
-        rescue Exception => error
-          puts error.to_s
-          puts error.backtrace.join("\n")
-        end
-      end
+    # Returns nothing
+    def receive(xml_element)
+      @mutex.synchronize { dirty_receive(xml_element) }
     end
 
-    ##
-    # Sends XML data to the socket and (optionally) waits
-    # to process received data.
+    # Receiving xml element, and processing it
+    # NOTE: Synchonized by Mutex
     #
-    # xml:: [String] The xml data to send
-    # proc:: [Proc = nil] The optional proc
-    # &block:: [Block] The optional block
+    # xml         - String the string containing xml
+    # proc_object - Proc the proc object to call
+    # block       - Block of ruby code
     #
-    def send(xml, proc=nil, &block)
-      Jabber::DEBUG && puts("SENDING:\n#{ xml.kind_of?(String) ? xml : xml.to_s }")
-      xml = xml.to_s if not xml.kind_of? String
-      block = proc if proc
-      @threadBlocks[Thread.current]=block if block
-      begin
-        @socket << xml
-      rescue
-        raise JabberConnectionException.new(true, xml)
-      end
-      @pollCounter = 10
+    # Returns nothing
+    def send(xml, proc_object, &block)
+      @mutex.synchronize { dirty_send(xml, proc_object, &block) }
     end
 
     ##
@@ -168,5 +135,62 @@ module Jabber::Protocol
       @socket.close if @socket
       @status = DISCONNECTED
     end
+
+    private
+    ##
+    # Processes a received ParsedXMLElement and executes
+    # registered thread blocks and filters against it.
+    #
+    # element:: [ParsedXMLElement] The received element
+    #
+    def dirty_receive(element)
+      while @threadBlocks.size==0 && @filters.size==0
+        sleep 0.1
+      end
+      Jabber::DEBUG && puts("RECEIVED:\n#{element.to_s}")
+      @threadBlocks.each do |thread, proc|
+        begin
+          proc.call(element)
+          if element.element_consumed?
+            @threadBlocks.delete(thread)
+            thread.wakeup if thread.alive?
+            return
+          end
+        rescue Exception => error
+          puts error.to_s
+          puts error.backtrace.join("\n")
+        end
+      end
+      @filters.each_value do |proc|
+        begin
+          proc.call(element)
+          return if element.element_consumed?
+        rescue Exception => error
+          puts error.to_s
+          puts error.backtrace.join("\n")
+        end
+      end
+    end # def dirty_receive
+
+    ##
+    # Sends XML data to the socket and (optionally) waits
+    # to process received data.
+    #
+    # xml:: [String] The xml data to send
+    # proc:: [Proc = nil] The optional proc
+    # &block:: [Block] The optional block
+    #
+    def dirty_send(xml, proc=nil, &block)
+      Jabber::DEBUG && puts("SENDING:\n#{ xml.kind_of?(String) ? xml : xml.to_s }")
+      xml = xml.to_s if not xml.kind_of? String
+      block = proc if proc
+      @threadBlocks[Thread.current]=block if block
+      begin
+        @socket << xml
+      rescue
+        raise JabberConnectionException.new(true, xml)
+      end
+      @pollCounter = 10
+    end # def dirty_send
   end
 end

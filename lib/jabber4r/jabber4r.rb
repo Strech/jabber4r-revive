@@ -13,6 +13,10 @@ end
 
 require "jabber4r/session"
 require "jabber4r/protocol"
+require "jabber4r/protocol/connection"
+require "jabber4r/protocol/iq"
+require "jabber4r/protocol/presence"
+require "jabber4r/protocol/message"
 require "jabber4r/roster"
 require "jabber4r/jid"
 require "jabber4r/vcard"

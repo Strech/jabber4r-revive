@@ -5,5 +5,4 @@ rvm:
 branches:
   only:
     - master
-bundler_args: --without development
 script: bundle exec rspec

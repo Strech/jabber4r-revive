@@ -81,11 +81,11 @@ module Jabber::Protocol
     # NOTE: Synchonized by Mutex
     #
     # xml         - String the string containing xml
-    # proc_object - Proc the proc object to call
+    # proc_object - Proc the proc object to call (default: nil)
     # block       - Block of ruby code
     #
     # Returns nothing
-    def send(xml, proc_object, &block)
+    def send(xml, proc_object = nil, &block)
       @mutex.synchronize { dirty_send(xml, proc_object, &block) }
     end
 

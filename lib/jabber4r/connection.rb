@@ -16,7 +16,7 @@ module Jabber
     attr_reader :host, :port, :status, :input, :output
 
     # Internal
-    attr_reader :poll_thread, :parser_thread, :socket
+    attr_reader :poll_thread, :parser_thread, :socket, :filters
 
     def initialize(host, port = 5222)
       @host, @port = host, port
@@ -67,6 +67,27 @@ module Jabber
     # Returns boolean
     def disconnected?
       status == DISCONNECTED
+    end
+
+    # Adds a filter block to process received XML messages
+    #
+    # name - String the name of filter
+    # block - Block of code
+    #
+    # Returns nothing
+    def add_filter(name, &block)
+      raise ArgumentError, "Expected block to be given" if block.nil?
+
+      @filters[name] = block
+    end
+
+    # Removes a filter block
+    #
+    # name - String the name of filter
+    #
+    # Returns Block of code
+    def remove_filter(name)
+      filters.delete(name)
     end
 
     ############################################################################
@@ -126,23 +147,6 @@ module Jabber
           end
         end
       end
-    end
-
-    ##
-    # Adds a filter block/proc to process received XML messages
-    #
-    # xml:: [String] The xml data to send
-    # proc:: [Proc = nil] The optional proc
-    # &block:: [Block] The optional block
-    #
-    def add_filter(ref, proc=nil, &block)
-      block = proc if proc
-      raise "Must supply a block or Proc object to the addFilter method" if block.nil?
-      @filters[ref] = block
-    end
-
-    def delete_filter(ref)
-      @filters.delete(ref)
     end
 
     private

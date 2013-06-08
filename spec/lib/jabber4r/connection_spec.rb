@@ -24,4 +24,26 @@ describe Jabber::Connection do
     it { expect(connection.parser_thread).not_to be_alive }
     it { expect(connection.socket).to be_closed }
   end
+
+  describe "#add_filter" do
+    context "when filter name and block is given" do
+      before { connection.add_filter("hello") { 1 } }
+
+      it { expect(connection.filters).to have_key "hello" }
+    end
+
+    context "when only filter name give" do
+      it { expect { connection.add_filter("hello") }.to raise_error ArgumentError }
+    end
+  end
+
+  describe "#remove_filter" do
+    before { connection.add_filter("hello") { 1 } }
+    it { expect(connection.filters).to have_key "hello" }
+
+    it "should remove filter" do
+      connection.remove_filter("hello")
+      expect(connection.filters).not_to have_key "hello"
+    end
+  end
 end

@@ -13,6 +13,7 @@ module Jabber
   class ConnectionForceCloseError < StandardError; end
 end
 
+require "jabber4r/debugger"
 require "jabber4r/session"
 require "jabber4r/protocol"
 require "jabber4r/connection"

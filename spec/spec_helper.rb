@@ -5,5 +5,5 @@ require "jabber4r"
 Dir["spec/support/**/*.rb"].sort.each { |f| require f }
 
 RSpec.configure do |config|
-  # ... dummy
+  # ... rspec options
 end

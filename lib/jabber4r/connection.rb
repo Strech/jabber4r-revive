@@ -16,21 +16,20 @@ module Jabber
     attr_reader :host, :port, :status, :input, :output
 
     # Internal
-    attr_reader :poll_thread, :parser_thread, :socket, :filters
+    attr_reader :poll_thread, :parser_thread, :socket, :filters, :handlers
 
     def initialize(host, port = 5222)
       @host, @port = host, port
 
-      @threadBlocks = {}
-      @filters = {}
+      @handlers, @filters = {}, {}
 
-      @pollCounter = 10
+      @poll_counter = 10
       @mutex = Mutex.new
 
       @status = DISCONNECTED
     end
 
-    # Connects to the Jabber server through a TCP Socket and
+    # Public: Connects to the Jabber server through a TCP Socket and
     # starts the Jabber parser.
     #
     # Returns nothing
@@ -43,7 +42,7 @@ module Jabber
       @status = CONNECTED
     end
 
-    # Closes the connection to the Jabber service
+    # Public: Closes the connection to the Jabber service
     #
     # Returns nothing
     def close
@@ -55,21 +54,21 @@ module Jabber
     end
     alias :disconnect :close
 
-    # Returns if this connection is connected to a Jabber service
+    # Public: Returns if this connection is connected to a Jabber service
     #
     # Returns boolean
     def connected?
       status == CONNECTED
     end
 
-    # Returns if this connection is NOT connected to a Jabber service
+    # Public: Returns if this connection is NOT connected to a Jabber service
     #
     # Returns boolean
     def disconnected?
       status == DISCONNECTED
     end
 
-    # Adds a filter block to process received XML messages
+    # Public: Adds a filter block to process received XML messages
     #
     # name - String the name of filter
     # block - Block of code
@@ -81,13 +80,45 @@ module Jabber
       @filters[name] = block
     end
 
-    # Removes a filter block
+    # Public: Removes a filter block
     #
     # name - String the name of filter
     #
     # Returns Block of code
     def remove_filter(name)
       filters.delete(name)
+    end
+
+    # Public: Receiving xml element, and processing it
+    # NOTE: Synchonized by Mutex
+    #
+    # xml         - String the string containing xml
+    # proc_object - Proc the proc object to call (default: nil)
+    # block       - Block of ruby code
+    #
+    # Returns nothing
+    def send(xml, proc_object = nil, &block)
+      @mutex.synchronize { write_to_socket(xml, proc_object, &block) }
+    end
+
+    # Internal: Sends XML data to the socket and (optionally) waits
+    # to process received data.
+    # NOTE: If both habdler and block are given, handler has higher proirity
+    #
+    # xml     - String the xml data to send
+    # handler - [Proc|Lambda|#call] the proc object or labda to handle response data (optional)
+    # block   - Block the block of ruby code (optional)
+    #
+    # Returns nothing
+    def write_to_socket(xml, handler = nil, &block)
+      Jabber.debug("SENDING:\n#{xml}")
+
+      handler = block if handler.nil?
+      handlers[Thread.current] = handler unless handler.nil?
+
+      socket.write(xml)
+
+      @poll_counter = 10
     end
 
     ############################################################################
@@ -117,18 +148,6 @@ module Jabber
       @mutex.synchronize { dirty_receive(xml_element) }
     end
 
-    # Receiving xml element, and processing it
-    # NOTE: Synchonized by Mutex
-    #
-    # xml         - String the string containing xml
-    # proc_object - Proc the proc object to call (default: nil)
-    # block       - Block of ruby code
-    #
-    # Returns nothing
-    def send(xml, proc_object = nil, &block)
-      @mutex.synchronize { dirty_send(xml, proc_object, &block) }
-    end
-
     ##
     # Starts a polling thread to send "keep alive" data to prevent
     # the Jabber connection from closing for inactivity.
@@ -137,8 +156,8 @@ module Jabber
       sleep 10
       while true
         sleep 2
-        @pollCounter = @pollCounter - 1
-        if @pollCounter < 0
+        @poll_counter = @poll_counter - 1
+        if @poll_counter < 0
           begin
             send("  \t  ")
           rescue
@@ -157,15 +176,15 @@ module Jabber
     # element:: [ParsedXMLElement] The received element
     #
     def dirty_receive(element)
-      while @threadBlocks.size==0 && @filters.size==0
+      while @handlers.size==0 && @filters.size==0
         sleep 0.1
       end
       Jabber::DEBUG && puts("RECEIVED:\n#{element.to_s}")
-      @threadBlocks.each do |thread, proc|
+      @handlers.each do |thread, proc|
         begin
           proc.call(element)
           if element.element_consumed?
-            @threadBlocks.delete(thread)
+            @handlers.delete(thread)
             thread.wakeup if thread.alive?
             return
           end
@@ -184,26 +203,5 @@ module Jabber
         end
       end
     end # def dirty_receive
-
-    ##
-    # Sends XML data to the socket and (optionally) waits
-    # to process received data.
-    #
-    # xml:: [String] The xml data to send
-    # proc:: [Proc = nil] The optional proc
-    # &block:: [Block] The optional block
-    #
-    def dirty_send(xml, proc=nil, &block)
-      Jabber::DEBUG && puts("SENDING:\n#{ xml.kind_of?(String) ? xml : xml.to_s }")
-      xml = xml.to_s if not xml.kind_of? String
-      block = proc if proc
-      @threadBlocks[Thread.current]=block if block
-      begin
-        @socket << xml
-      rescue
-        raise JabberConnectionException.new(true, xml)
-      end
-      @pollCounter = 10
-    end # def dirty_send
   end
 end

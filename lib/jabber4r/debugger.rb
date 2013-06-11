@@ -13,7 +13,7 @@ module Jabber
   # module_function m
   [:warn, :debug, :info].each do |m|
     define_method(m) do |message|
-      Debugger.instance.send(m, message)
+      Debugger.send(m, message)
     end
     module_function m
   end

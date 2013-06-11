@@ -2,9 +2,10 @@
 require "spec_helper"
 
 describe Jabber::Connection do
+  let(:socket) { TCPSocketMock.mock }
   let(:connection) { described_class.new "localhost" }
 
-  before { TCPSocket.stub(:new).and_return TCPSocketMock.mock! }
+  before { TCPSocket.stub(:new).and_return socket }
 
   describe "#connect" do
     before { connection.connect }
@@ -44,6 +45,43 @@ describe Jabber::Connection do
     it "should remove filter" do
       connection.remove_filter("hello")
       expect(connection.filters).not_to have_key "hello"
+    end
+  end
+
+  describe "#send" do
+    let(:handler) { proc { 1 } }
+
+    before { connection.connect }
+    before { Thread.stub(:current).and_return "current" }
+
+    context "when own handler is given" do
+      before { connection.send("hello", handler) }
+
+      it { expect(connection.handlers).to have_key "current" }
+      it { expect(connection.handlers["current"]).to eq handler }
+
+      describe "socket" do
+        it { expect(socket.recorded_data).to eq "hello" }
+      end
+    end
+
+    context "when only block is given" do
+      before { connection.send("hello") { 1 } }
+
+      it { expect(connection.handlers).to have_key "current" }
+    end
+
+    context "when handler and block are given" do
+      before { connection.send("hello", handler) { 1 } }
+
+      it { expect(connection.handlers).to have_key "current" }
+      it { expect(connection.handlers["current"]).to eq handler }
+    end
+
+    context "when no handlers and block are given" do
+      before { connection.send("hello") }
+
+      it { expect(connection.handlers).to be_empty }
     end
   end
 end

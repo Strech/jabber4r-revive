@@ -1,26 +1,38 @@
 # coding: utf-8
-require "tempfile"
 
 # Mock of TCPSocket
-class TCPSocketMock < IO
-  attr_accessor :response
+class TCPSocketMock
+  attr_reader :recorded_data, :response_data, :closed
 
-  def self.mock!
-    Tempfile.new("tcpsocketmock.sock")
+  def initialize
+    @recorded_data = ""
+    @closed = false
+  end
+
+  def self.mock
+    new
   end
 
   def readline(some_text = nil)
     response
   end
 
-  def flush
-  end
+  def flush; end
 
   def write(some_text = nil)
+    @recorded_data << some_text
   end
 
   def readchar
     6
+  end
+
+  def close
+    @closed = true
+  end
+
+  def closed?
+    closed
   end
 
   def read(num)

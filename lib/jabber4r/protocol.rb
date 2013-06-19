@@ -235,8 +235,10 @@ module Jabber
               @current.append_data(text) if @current
             end
             parser.parse
-          rescue REXML::ParseException, Jabber::ConnectionForceCloseError
+          rescue REXML::ParseException
             @listener.parse_failure
+          rescue Jabber::ConnectionForceCloseError => e
+            @listener.parse_failure(e)
           end
         end
       end

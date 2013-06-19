@@ -45,8 +45,8 @@ module Jabber::Protocol
       @exception_block = block
     end
 
-    def parse_failure
-      Thread.new {@exception_block.call if @exception_block}
+    def parse_failure(exception = nil)
+      Thread.new { @exception_block.call(exception) if @exception_block }
     end
 
     ##
@@ -134,6 +134,14 @@ module Jabber::Protocol
       @pollThread.kill
       @socket.close if @socket
       @status = DISCONNECTED
+    end
+
+    def force_close!
+      close
+
+      @threadBlocks.each do |thread, _|
+        thread.raise("Connection was force closed")
+      end
     end
 
     private

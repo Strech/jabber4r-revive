@@ -216,10 +216,14 @@ module Jabber
             @session_id = element.attr_id
           end
         end
-        @connection.on_connection_exception do
+        @connection.on_connection_exception do |exception|
           @session_failure_block.call if @session_failure_block
 
-          self.release
+          if exception.is_a? Jabber::ConnectionForceCloseError
+            @connection.force_close!
+          else
+            self.release
+          end
         end
         Thread.stop
       end

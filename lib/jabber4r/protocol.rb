@@ -195,6 +195,7 @@ module Jabber
         # the stream closes.
         #
         def parse
+          #puts "PARSE"
           @started = false
           begin
             parser = REXML::Parsers::SAX2Parser.new @stream
@@ -204,6 +205,7 @@ module Jabber
             end
 
             parser.listen( :start_element ) do |uri, localname, qname, attributes|
+              puts "START ELEMENT"
               case qname
               when "stream:stream"
                 openstream = ParsedXMLElement.new(qname)
@@ -220,6 +222,7 @@ module Jabber
               end
             end
             parser.listen( :end_element ) do  |uri, localname, qname|
+              puts "END ELEMENT"
               case qname
               when "stream:stream"
                 @started = false
@@ -229,13 +232,19 @@ module Jabber
               end
             end
             parser.listen( :characters ) do | text |
+              puts "CHARACTERS"
               @current.append_data(text) if @current
             end
             parser.listen( :cdata ) do | text |
+              puts "CDATA"
               @current.append_data(text) if @current
             end
             parser.parse
-          rescue REXML::ParseException
+          rescue REXML::ParseException => e
+            puts "FAIL"
+
+            puts e.backtrace.join "\n"
+            puts e.message
             @listener.parse_failure
           rescue Jabber::ConnectionForceCloseError => e
             @listener.parse_failure(e)

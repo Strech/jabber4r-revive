@@ -16,7 +16,13 @@ module Jabber
     attr_reader :host, :port, :status, :input, :output
 
     # Internal
-    attr_reader :poll_thread, :parser_thread, :socket, :filters, :handlers
+    attr_reader :poll_thread, :parser_thread
+
+    # Internal
+    attr_reader :filters, :handlers
+
+    # Internal
+    attr_reader :socket, :parser
 
     def initialize(host, port = 5222)
       @host, @port = host, port
@@ -35,11 +41,26 @@ module Jabber
     # Returns nothing
     def connect
       @socket = TCPSocket.new(@host, @port)
-      @parser = Jabber::Protocol.Parser.new(@socket, self)
-      @parser_thread = Thread.new { @parser.parse }
-      @poll_thread   = Thread.new { poll }
+      @parser = Jabber::Protocol.Parser.new(socket, self)
+
+      register_parsing_thread
+      register_polling_thread
 
       @status = CONNECTED
+    end
+
+    # Internal: Register new parser thread
+    #
+    # Returns nothing
+    def register_parsing_thread
+      @parser_thread = Thread.new { parser.parse }
+    end
+
+    # Internal: Register new polling thread
+    #
+    # Returns nothing
+    def register_polling_thread
+      @poll_thread = Thread.new { poll }
     end
 
     # Public: Closes the connection to the Jabber service
@@ -101,6 +122,16 @@ module Jabber
       @mutex.synchronize { write_to_socket(xml, proc_object, &block) }
     end
 
+    # Public: Receiving xml element, and processing it
+    # NOTE: Synchonized by Mutex
+    #
+    # xml_element - ParsedXMLElement the received from socket xml element
+    #
+    # Returns nothing
+    def receive(xml)
+      @mutex.synchronize { process_xml_from_socket(xml) }
+    end
+
     # Internal: Sends XML data to the socket and (optionally) waits
     # to process received data.
     # NOTE: If both habdler and block are given, handler has higher proirity
@@ -121,6 +152,72 @@ module Jabber
       @poll_counter = 10
     end
 
+    # Internal: Processes a received ParsedXMLElement and executes
+    # registered handlers and filters against it
+    #
+    # xml - ParsedXMLElement The received element
+    #
+    # Returns nothing
+    def process_xml_from_socket(xml)
+      sleep 0.1 while wait_for_consume?
+
+      Jabber.debug("RECEIVED:\n#{xml}")
+
+      consume_xml_by_handlers(xml) || consume_xml_by_filters(xml)
+    end
+
+    # Internal: Processes a received ParsedXMLElement by handlers
+    #
+    # xml - ParsedXMLElement The received element
+    #
+    # Returns boolean
+    def consume_xml_by_handlers(xml)
+      handlers.each do |thread, block|
+        begin
+          block.call(xml)
+
+          if xml.element_consumed?
+            handlers.delete(thread)
+            thread.wakeup if thread.alive?
+
+            return true
+          end
+        rescue Exception => error
+          puts error.to_s
+          puts error.backtrace.join("\n")
+        end
+      end
+
+      false
+    end
+
+    # Internal: Processes a received ParsedXMLElement by filters
+    #
+    # xml - ParsedXMLElement The received element
+    #
+    # Returns boolean
+    def consume_xml_by_filters(xml)
+      filters.each_value do |block|
+        begin
+          block.call(xml)
+
+          return true if xml.element_consumed?
+        rescue Exception => error
+          puts error.to_s
+          puts error.backtrace.join("\n")
+        end
+      end
+
+      false
+    end
+
+    # Internal: Should we wait for next part of socket data
+    #
+    # Returns boolean
+    def wait_for_consume?
+      handlers.size.zero? && filters.size.zero?
+    end
+
     ############################################################################
     #                 All that under needs to be REFACTORED                    #
     ############################################################################
@@ -136,16 +233,6 @@ module Jabber
 
     def parse_failure
       Thread.new {@exception_block.call if @exception_block}
-    end
-
-    # Receiving xml element, and processing it
-    # NOTE: Synchonized by Mutex
-    #
-    # xml_element - ParsedXMLElement the received from socket xml element
-    #
-    # Returns nothing
-    def receive(xml_element)
-      @mutex.synchronize { dirty_receive(xml_element) }
     end
 
     ##
@@ -167,41 +254,5 @@ module Jabber
         end
       end
     end
-
-    private
-    ##
-    # Processes a received ParsedXMLElement and executes
-    # registered thread blocks and filters against it.
-    #
-    # element:: [ParsedXMLElement] The received element
-    #
-    def dirty_receive(element)
-      while @handlers.size==0 && @filters.size==0
-        sleep 0.1
-      end
-      Jabber::DEBUG && puts("RECEIVED:\n#{element.to_s}")
-      @handlers.each do |thread, proc|
-        begin
-          proc.call(element)
-          if element.element_consumed?
-            @handlers.delete(thread)
-            thread.wakeup if thread.alive?
-            return
-          end
-        rescue Exception => error
-          puts error.to_s
-          puts error.backtrace.join("\n")
-        end
-      end
-      @filters.each_value do |proc|
-        begin
-          proc.call(element)
-          return if element.element_consumed?
-        rescue Exception => error
-          puts error.to_s
-          puts error.backtrace.join("\n")
-        end
-      end
-    end # def dirty_receive
   end
 end

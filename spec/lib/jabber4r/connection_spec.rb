@@ -2,7 +2,7 @@
 require "spec_helper"
 
 describe Jabber::Connection do
-  let(:socket) { TCPSocketMock.mock }
+  let(:socket) { TCPSocketMock.new }
   let(:connection) { described_class.new "localhost" }
 
   before { TCPSocket.stub(:new).and_return socket }
@@ -61,7 +61,7 @@ describe Jabber::Connection do
       it { expect(connection.handlers["current"]).to eq handler }
 
       describe "socket" do
-        it { expect(socket.recorded_data).to eq "hello" }
+        it { expect(socket.to_s).to eq "hello" }
       end
     end
 
@@ -83,5 +83,92 @@ describe Jabber::Connection do
 
       it { expect(connection.handlers).to be_empty }
     end
+  end
+
+  describe "#receive" do
+    let(:thread) { double("Pseudo thread", alive?: true) }
+    let(:element) { double("XML Element", element_consumed?: false) }
+
+    let(:consume) { ->(element) { element.stub(:element_consumed?).and_return true } }
+    let(:skip) { ->(element) { element.stub(:element_consumed?).and_return false } }
+
+    before { connection.stub :register_parsing_thread }
+    before { connection.stub :register_polling_thread }
+
+    context "when handlers are not empty" do
+      context "when filters are empty" do
+        before do
+          thread.should_receive(:wakeup)
+          connection.stub(:handlers).and_return({thread => consume})
+
+          connection.receive(element)
+        end
+
+        it { expect(connection.handlers).to be_empty }
+        it { expect(connection.filters).to be_empty }
+      end
+
+      context "when filters are not empty" do
+        context "when handler consume element" do
+          before do
+            thread.should_receive(:wakeup)
+            skip.should_not_receive(:call)
+
+            connection.stub(:handlers).and_return({thread => consume})
+            connection.stub(:filters).and_return({f1: skip})
+
+            connection.receive(element)
+          end
+
+          it { expect(connection.handlers).to be_empty }
+          it { expect(connection.filters).not_to be_empty }
+        end
+
+        context "when handler doesn't consume element" do
+          before do
+            thread.should_not_receive(:wakeup)
+            consume.should_receive(:call).and_call_original
+
+            connection.stub(:handlers).and_return({thread => skip})
+            connection.stub(:filters).and_return({f1: consume})
+
+            connection.receive(element)
+          end
+
+          it { expect(connection.handlers).not_to be_empty }
+          it { expect(connection.filters).not_to be_empty }
+        end
+      end
+    end
+
+    context "when handlers are empty" do
+      context "when filters are empty" do
+        before do
+          thread.should_not_receive(:wakeup)
+          connection.should_receive(:wait_for_consume?).and_return false
+
+          connection.receive(element)
+        end
+
+        it { expect(connection.handlers).to be_empty }
+        it { expect(connection.filters).to be_empty }
+      end
+
+      context "when filters are not empty" do
+        before do
+          thread.should_not_receive(:wakeup)
+          consume.should_receive(:call).and_call_original
+
+          connection.stub(:filters).and_return({f1: consume})
+
+          connection.receive(element)
+        end
+
+        it { expect(connection.handlers).to be_empty }
+        it { expect(connection.filters).not_to be_empty }
+      end
+    end
+
+    # TODO : When socket is empty?
   end
 end

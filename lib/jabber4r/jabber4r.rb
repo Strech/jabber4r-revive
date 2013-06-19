@@ -9,6 +9,8 @@
 #
 module Jabber
   DEBUG = false
+
+  class ConnectionForceCloseError < StandardError; end
 end
 
 require "jabber4r/session"

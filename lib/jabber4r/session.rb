@@ -217,10 +217,9 @@ module Jabber
           end
         end
         @connection.on_connection_exception do
-          if @session_failure_block
-            self.release
-            @session_failure_block.call
-          end
+          @session_failure_block.call if @session_failure_block
+
+          self.release
         end
         Thread.stop
       end
@@ -525,6 +524,10 @@ module Jabber
     def close
       release
     end
+
+    def alive?
+      @connection.is_connected?
+    end
     
     ##
     # Requests the Roster for the (authenticated) account.  This method blocks
@@ -608,8 +611,5 @@ module Jabber
     def notify_message_listeners(message)
       @messageListeners.each_value {|listener| listener.call(message)}
     end
-
-  end  
-  
+  end
 end
-

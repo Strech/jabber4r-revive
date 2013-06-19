@@ -198,6 +198,11 @@ module Jabber
           @started = false
           begin
             parser = REXML::Parsers::SAX2Parser.new @stream
+
+            parser.listen(:end_document) do
+              raise Jabber::ConnectionForceCloseError
+            end
+
             parser.listen( :start_element ) do |uri, localname, qname, attributes|
               case qname
               when "stream:stream"
@@ -230,7 +235,7 @@ module Jabber
               @current.append_data(text) if @current
             end
             parser.parse
-          rescue REXML::ParseException
+          rescue REXML::ParseException, Jabber::ConnectionForceCloseError
             @listener.parse_failure
           end
         end

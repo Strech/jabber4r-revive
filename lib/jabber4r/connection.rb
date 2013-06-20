@@ -12,29 +12,66 @@ module Jabber
     DISCONNECTED = 1
     CONNECTED = 2
 
+    # Public
     attr_reader :host, :port, :status, :input, :output
 
-    def initialize(host, port=5222)
-      @host = host
-      @port = port
-      @status = DISCONNECTED
-      @filters = {}
+    # Internal
+    attr_reader :poll_thread, :parser_thread, :socket
+
+    def initialize(host, port = 5222)
+      @host, @port = host, port
+
       @threadBlocks = {}
+      @filters = {}
+
       @pollCounter = 10
       @mutex = Mutex.new
+
+      @status = DISCONNECTED
     end
 
-    ##
     # Connects to the Jabber server through a TCP Socket and
     # starts the Jabber parser.
     #
+    # Returns nothing
     def connect
       @socket = TCPSocket.new(@host, @port)
       @parser = Jabber::Protocol.Parser.new(@socket, self)
-      @parserThread = Thread.new {@parser.parse}
-      @pollThread = Thread.new {poll}
+      @parser_thread = Thread.new { @parser.parse }
+      @poll_thread   = Thread.new { poll }
+
       @status = CONNECTED
     end
+
+    # Closes the connection to the Jabber service
+    #
+    # Returns nothing
+    def close
+      parser_thread.kill if parser_thread # why if?
+      poll_thread.kill
+      socket.close if socket
+
+      @status = DISCONNECTED
+    end
+    alias :disconnect :close
+
+    # Returns if this connection is connected to a Jabber service
+    #
+    # Returns boolean
+    def connected?
+      status == CONNECTED
+    end
+
+    # Returns if this connection is NOT connected to a Jabber service
+    #
+    # Returns boolean
+    def disconnected?
+      status == DISCONNECTED
+    end
+
+    ############################################################################
+    #                 All that under needs to be REFACTORED                    #
+    ############################################################################
 
     ##
     # Mounts a block to handle exceptions if they occur during the
@@ -45,26 +82,8 @@ module Jabber
       @exception_block = block
     end
 
-    def parse_failure(exception = nil)
-      Thread.new { @exception_block.call(exception) if @exception_block }
-    end
-
-    ##
-    # Returns if this connection is connected to a Jabber service
-    #
-    # return:: [Boolean] Connection status
-    #
-    def connected?
-      status == CONNECTED
-    end
-
-    ##
-    # Returns if this connection is NOT connected to a Jabber service
-    #
-    # return:: [Boolean] Connection status
-    #
-    def disconnected?
-      status == DISCONNECTED
+    def parse_failure
+      Thread.new {@exception_block.call if @exception_block}
     end
 
     # Receiving xml element, and processing it
@@ -124,24 +143,6 @@ module Jabber
 
     def delete_filter(ref)
       @filters.delete(ref)
-    end
-
-    ##
-    # Closes the connection to the Jabber service
-    #
-    def close
-      @parserThread.kill if @parserThread
-      @pollThread.kill
-      @socket.close if @socket
-      @status = DISCONNECTED
-    end
-
-    def force_close!
-      close
-
-      @threadBlocks.each do |thread, _|
-        thread.raise("Connection was force closed")
-      end
     end
 
     private

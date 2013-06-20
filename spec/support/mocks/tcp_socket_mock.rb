@@ -1,8 +1,13 @@
 # coding: utf-8
+require "tempfile"
 
 # Mock of TCPSocket
-class TCPSocketMock
+class TCPSocketMock < IO
   attr_accessor :response
+
+  def self.mock!
+    Tempfile.new("tcpsocketmock.sock")
+  end
 
   def readline(some_text = nil)
     response

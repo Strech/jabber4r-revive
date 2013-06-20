@@ -1,6 +1,7 @@
 # coding: utf-8
-require "jabber4r/jabber4r"
+$LOAD_PATH.unshift File.expand_path("../../", __FILE__)
 
+require "jabber4r/jabber4r"
 Dir["spec/support/**/*.rb"].sort.each { |f| require f }
 
 RSpec.configure do |config|

@@ -1,12 +1,12 @@
 # License: see LICENSE.txt
 #  Jabber4R - Jabber Instant Messaging Library for Ruby
 #  Copyright (C) 2002  Rich Kilmer <rich@infoether.com>
-# 
+#
 
 
 module Jabber
   HEX = "0123456789abcdef"
-  
+
   ##
   # Generates a random hex string in the following format:
   #   JRR_01234567
@@ -16,7 +16,7 @@ module Jabber
   def Jabber.gen_random_resource
     return Jabber.gen_random_id("JRR_", 8)
   end
-  
+
   ##
   # Generates a random thread as a hex string in the following format:
   #   JRT_01234567890123456789
@@ -26,7 +26,7 @@ module Jabber
   def Jabber.gen_random_thread
     return Jabber.gen_random_id("JRT_", 20)
   end
-  
+
   ##
   # Generates a random id as a hex string
   #
@@ -38,7 +38,7 @@ module Jabber
     length.times {prefix += HEX[rand(16),1]}
     prefix
   end
-  
+
   class Subscription
     attr_accessor :type, :from, :id, :session
     def initialize(session, type, from, id)
@@ -58,47 +58,47 @@ module Jabber
       end
     end
   end
-  
+
   ##
   # This is a base class for subscription handlers
-  
+
   class SubscriptionHandler
     def subscribe(subscription)
     end
-    
+
     def subscribed(subscription)
     end
-    
+
     def unsubscribe(subscription)
     end
-    
+
     def unsubscribed(subscription)
     end
   end
-  
+
   class AutoSubscriptionHandler < SubscriptionHandler
-  
+
     def subscribe(subscription)
       subscription.accept
     end
-    
+
     def unsubscribe(subscription)
       subscription.accept
     end
   end
-    
+
 
   ##
   # The Jabber Session is the main class for dealing with a Jabber service.
   #
   class Session
-  
+
     # The host this session is connected to
     attr_reader :host
-    
+
     # The port (defaults to 5222) that this session is connected to
     attr_reader :port
-    
+
     # The Jabber::Protocol::Connection instance
     attr_reader :connection
 
@@ -110,21 +110,21 @@ module Jabber
 
     # The Jabber::JID of the current session
     attr_reader :jid
-    
+
     # The username to use for authenticating this session
     attr_accessor :username
-    
+
     # The password to use for authenticating this session
     attr_accessor :password
-    
+
     # The resource id for this session
     attr_accessor :resource
-    
+
     # The iq handlers for this session
     attr_accessor :iqHandlers
-    
+
     ##
-    # Session creation factory that creates a session, logs in, 
+    # Session creation factory that creates a session, logs in,
     # requests the roster, registers message and presence filters
     # and announces initial presence.  Login is done via plaintext
     # password authentication.
@@ -146,7 +146,7 @@ module Jabber
       session.announce_initial_presence
       session
     end
-    
+
     ##
     # Account registration method
     #
@@ -168,12 +168,12 @@ module Jabber
         end
       end
       Thread.stop
-      session.release      
+      session.release
       return registered
     end
-    
+
     ##
-    # Session creation factory that creates a session, logs in, 
+    # Session creation factory that creates a session, logs in,
     # requests the roster, registers message and presence filters
     # and announces initial presence.  Login is done via digest (SHA)
     # password authentication.
@@ -186,7 +186,7 @@ module Jabber
     def Session.bind_digest(jid, password, port=5222)
       Session.bind(jid, password, port, true)
     end
-    
+
     # Creates a new session connected to the supplied host and port.
     # The method attempts to build a Jabber::Protocol::Connection
     # object and send the open_stream XML message.  It then blocks
@@ -205,14 +205,14 @@ module Jabber
       @messageListeners = Hash.new
       @iqHandlers=Hash.new
       @subscriptionHandler = nil
-      @connection = Jabber::Protocol::Connection.new(host, port)
+      @connection = Jabber::Connection.new(host, port)
       @connection.connect
-      unless @connection.is_connected?
+      unless @connection.connected?
         raise "Session Error: Could not connected to #{host}:#{port}"
       else
-        @connection.send(Jabber::Protocol.gen_open_stream(host)) do |element| 
+        @connection.send(Jabber::Protocol.gen_open_stream(host)) do |element|
           if element.element_tag=="stream:stream"
-            element.consume_element 
+            element.consume_element
             @session_id = element.attr_id
           end
         end
@@ -228,15 +228,15 @@ module Jabber
         Thread.stop
       end
     end
-    
+
     ##
-    # Set a handler for session exceptions that get caught in 
+    # Set a handler for session exceptions that get caught in
     # communicating with the Jabber server.
     #
     def on_session_failure(&block)
       @session_failure_block = block
     end
-    
+
     ##
     # Counter for message IDs
     #
@@ -246,7 +246,7 @@ module Jabber
       @id = @id + 1
       return @id.to_s
     end
-    
+
     ##
     # Authenticate (logs into) this session with the supplied credentials.
     # The method blocks waiting for a reply to the login message.  Sets the
@@ -264,9 +264,9 @@ module Jabber
       @resource = resource
       @jid = JID.new("#{username}@#{@host}/#{resource}")
       @roster.add(@jid, "both", "Me", "My Resources")
-      
+
       msg_id = self.id
-      authHandler = Proc.new  do |element| 
+      authHandler = Proc.new  do |element|
         if element.element_tag=="iq" and element.attr_id==msg_id
           element.consume_element
           if element.attr_type=="result"
@@ -286,7 +286,7 @@ module Jabber
       Thread.stop
       return @authenticated
     end
-    
+
     ##
     # Is this an authenticated session?
     #
@@ -295,14 +295,14 @@ module Jabber
     def is_authenticated?
       return @authenticated
     end
-      
+
     ##
     # Sends the initial presence message to the Jabber service
     #
     def announce_initial_presence
       @connection.send(Jabber::Protocol::Presence.gen_initial(id))
     end
-    
+
     ##
     # Sends an extended away presence message
     #
@@ -311,7 +311,7 @@ module Jabber
     def announce_extended_away(status=nil)
       @connection.send(Jabber::Protocol::Presence.gen_xa(id, status))
     end
-    
+
     ##
     # Sends a free for chat presence message
     #
@@ -320,7 +320,7 @@ module Jabber
     def announce_free_for_chat(status=nil)
       @connection.send(Jabber::Protocol::Presence.gen_chat(id, status))
     end
-    
+
     ##
     # Sends a 'normal' presence message
     #
@@ -329,7 +329,7 @@ module Jabber
     def announce_normal(status=nil)
       @connection.send(Jabber::Protocol::Presence.gen_normal(id, status))
     end
-    
+
     ##
     # Sends an away from computer presence message
     #
@@ -338,7 +338,7 @@ module Jabber
     def announce_away_from_computer(status=nil)
       @connection.send(Jabber::Protocol::Presence.gen_away(id, status))
     end
-    
+
     ##
     # Sends a do not disturb presence message
     #
@@ -347,7 +347,7 @@ module Jabber
     def announce_do_not_disturb(status=nil)
       @connection.send(Jabber::Protocol::Presence.gen_dnd(id, status))
     end
-    
+
     ##
     # Sets the handler for subscription requests, notifications, etc.
     #
@@ -355,15 +355,15 @@ module Jabber
       @subscriptionHandler = handler.new(self) if handler
       @subscriptionHandler = block if block_given? and !handler
     end
-    
+
     def enable_autosubscription
       set_subscription_handler AutoSubscriptionHandler
     end
-    
-    def subscribe(to, name="") 
+
+    def subscribe(to, name="")
       to = JID.to_jid(to)
       roster_item = @roster[to]
-      
+
       if roster_item #if you already have a roster item just send the subscribe request
         if roster_item.subscription=="to" or roster_item.subscription=="both"
           return
@@ -381,7 +381,7 @@ module Jabber
         end
       end
     end
-    
+
     ##
     # Adds a filter to the Connection to manage tracking resources that come online/offline
     #
@@ -422,13 +422,13 @@ module Jabber
               @subscriptionHandler.send(Subscription.new(self, type.intern, from, id))
             end
           end
-        end #if presence 
+        end #if presence
       end #do
     end
-    
+
     ##
     # Creates a new message to the supplied JID of type NORMAL
-    # 
+    #
     # to:: [Jabber::JID] Who to send the message to
     # type:: [String = Jabber::Protocol::Message::NORMAL] The type of message to send (see Jabber::Protocol::Message)
     # return:: [Jabber::Protocol::Message] The new message
@@ -438,7 +438,7 @@ module Jabber
       msg.session=self
       return msg
     end
-    
+
     ##
     # Creates a new message addressed to the supplied JID of type CHAT
     #
@@ -448,7 +448,7 @@ module Jabber
     def new_chat_message(to)
       self.new_message(to, Jabber::Protocol::Message::CHAT)
     end
-    
+
     ##
     # Creates a new message addressed to the supplied JID of type GROUPCHAT
     #
@@ -458,7 +458,7 @@ module Jabber
     def new_group_chat_message(to)
       self.new_message(to, Jabber::Protocol::Message::GROUPCHAT)
     end
-    
+
     ##
     # Adds a filter to the Connection to manage tracking messages to forward
     # to registered message listeners.
@@ -469,10 +469,10 @@ module Jabber
           element.consume_element
           message = Jabber::Protocol::Message.from_element(self, element)
           notify_message_listeners(message)
-        end #if message 
+        end #if message
       end #do
     end
-    
+
     ##
     # Add a listener for new messages
     #
@@ -480,7 +480,7 @@ module Jabber
     #    id = session.add_message_listener do |message|
     #      puts message
     #    end
-    # 
+    #
     # &block [Block] The block to process a message
     # return:: [String] The listener ID...used to remove the listener
     #
@@ -489,7 +489,7 @@ module Jabber
       @messageListeners[id]=block if block
       return id
     end
-    
+
     ##
     # Deletes a message listener
     #
@@ -498,9 +498,9 @@ module Jabber
     def delete_message_listener(lid)
       @messageListeners.delete(lid)
     end
-    
+
     #Cleanup methods
-    
+
     ##
     # Releases the connection and resets the session.  The Session instance
     # is no longer usable after this method is called
@@ -521,7 +521,7 @@ module Jabber
         #ignore error
       end
     end
-    
+
     ##
     # Same as _release
     #
@@ -529,10 +529,6 @@ module Jabber
       release
     end
 
-    def alive?
-      @connection.is_connected?
-    end
-    
     ##
     # Requests the Roster for the (authenticated) account.  This method blocks
     # until a reply to the roster request is received.
@@ -553,12 +549,12 @@ module Jabber
         register_roster_filter
       end
     end
-    
+
     ##
     # Registers the roster filter with the Connection to forward IQ requests
     # to the IQ listeners(they register by namespace)
     #
-    def register_iq_filter() 
+    def register_iq_filter()
       @connection.add_filter("iqFilter") do |element|
         if element.element_tag=="iq" then
           element.consume_element
@@ -568,8 +564,8 @@ module Jabber
         end
       end
     end
-    
-    
+
+
     ##
     # Registers the roster filter with the Connection to forward roster changes to
     # the roster listeners.
@@ -587,7 +583,7 @@ module Jabber
         end
       end
     end
-    
+
     ##
     # Registers a listener for roster events
     #
@@ -597,7 +593,7 @@ module Jabber
     def add_roster_listener(&block)
       roster.add_listener(&block)
     end
-    
+
     ##
     # Deletes the roster listener
     #
@@ -606,7 +602,7 @@ module Jabber
     def delete_roster_listener(id)
       roster.delete_listener(id)
     end
-    
+
     ##
     # Notifies message listeners of the received message
     #

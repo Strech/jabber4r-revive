@@ -4,7 +4,7 @@
 # Jabber4R - Jabber Instant Messaging Library for Ruby
 # Copyright (C) 2002  Rich Kilmer <rich@infoether.com>
 
-module Jabber::Protocol
+module Jabber
   # The connection class encapsulates the connection to the Jabber
   # service including managing the socket and controlling the parsing
   # of the Jabber XML stream.
@@ -54,8 +54,8 @@ module Jabber::Protocol
     #
     # return:: [Boolean] Connection status
     #
-    def is_connected?
-      return @status == CONNECTED
+    def connected?
+      status == CONNECTED
     end
 
     ##
@@ -63,8 +63,8 @@ module Jabber::Protocol
     #
     # return:: [Boolean] Connection status
     #
-    def is_disconnected?
-      return @status == DISCONNECTED
+    def disconnected?
+      status == DISCONNECTED
     end
 
     # Receiving xml element, and processing it

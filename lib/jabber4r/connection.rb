@@ -218,10 +218,6 @@ module Jabber
       handlers.size.zero? && filters.size.zero?
     end
 
-    ############################################################################
-    #                 All that under needs to be REFACTORED                    #
-    ############################################################################
-
     ##
     # Mounts a block to handle exceptions if they occur during the
     # poll send.  This will likely be the first indication that
@@ -231,9 +227,13 @@ module Jabber
       @exception_block = block
     end
 
-    def parse_failure
-      Thread.new {@exception_block.call if @exception_block}
+    def parse_failure(exception = nil)
+      Thread.new { @exception_block.call(exception) if @exception_block }
     end
+
+    ############################################################################
+    #                 All that under needs to be REFACTORED                    #
+    ############################################################################
 
     ##
     # Starts a polling thread to send "keep alive" data to prevent

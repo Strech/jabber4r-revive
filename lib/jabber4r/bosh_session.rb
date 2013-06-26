@@ -95,7 +95,7 @@ module Jabber
     #
     # Returns String
     def to_json
-      {jid: jid, rid: rid, sid: sid}.to_json
+      {jid: jid.to_s, rid: rid, sid: sid}.to_json
     end
 
     private

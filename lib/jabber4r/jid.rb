@@ -3,19 +3,20 @@
 # License: see LICENSE
 # Jabber4R - Jabber Instant Messaging Library for Ruby
 # Copyright (C) 2002  Rich Kilmer <rich@infoether.com>
+# Copyright (C) 2013  Sergey Fedorov <strech_ftf@mail.ru>
 
 module Jabber
   # The Jabber ID class is used to hold a parsed jabber identifier (account+host+resource)
   class JID
     PATTERN = /^(?:(?<node>[^@]*)@)??(?<host>[^@\/]*)(?:\/(?<resource>.*?))?$/.freeze
 
-    # The node (account)
+    # Public: The node (account)
     attr_accessor :node
 
-    # The resource id
+    # Public: The resource id
     attr_accessor :resource
 
-    # The host name (or IP address)
+    # Public: The host name (or IP address)
     attr_accessor :host
 
     # Public: Convert something to Jabber::JID

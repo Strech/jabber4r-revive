@@ -99,13 +99,11 @@ module Jabber
     end
 
     private
-   # Internal: Send open stream command to jabber server
+    # Internal: Send open stream command to jabber server
     #
     # Raises XMLMalformedError
     # Returns boolean
     def open_new_stream
-      Jabber.debug("Open stream for bosh session")
-
       body = Ox::Element.new("body").tap do |element|
         element[:xmlns]   = "http://jabber.org/protocol/httpbind"
         element[:content] = "text/xml; charset=utf-8"
@@ -115,6 +113,8 @@ module Jabber
         element[:wait]    = 60
         element[:hold]    = 1
       end
+
+      Jabber.debug(%Q[Open (rid="#{body.rid}") for BOSH session])
 
       response = post(Ox.dump body)
       xml = Ox.parse(response.body.tr("'", '"'))
@@ -166,6 +166,9 @@ module Jabber
         element << iq
       end
 
+      Jabber.debug(%Q[Login (rid="#{body.rid}" sid="#{body.sid}") in opened BOSH session] +
+                   %Q[ as #{query.username.text}/#{query.resource.text}])
+
       response = post(Ox.dump body)
       xml = Ox.parse(response.body.tr("'", '"'))
 
@@ -197,7 +200,7 @@ module Jabber
 
       response = Net::HTTP.new(host, port).start { |http| http.request(request) }
 
-      Jabber.debug("Receiving - #{response.code}: #{response.body.inspect}")
+      Jabber.debug("Receiving POST response - #{response.code}: #{response.body.inspect}")
 
       unless response.is_a?(Net::HTTPSuccess)
         raise Net::HTTPBadResponse, "Net::HTTPSuccess expected, but #{response.class} was received"

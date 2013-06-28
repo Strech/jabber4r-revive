@@ -1,7 +1,7 @@
 # License: see LICENSE.txt
 #  Jabber4R - Jabber Instant Messaging Library for Ruby
 #  Copyright (C) 2002  Rich Kilmer <rich@infoether.com>
-# 
+#
 
 
 module Jabber
@@ -9,17 +9,17 @@ module Jabber
   ##
   # The Roster class encapsulates the runtime roster of the session instance.
   # The Roster contains all subscriptions in a Jabber::Roster::RosterItem hash.
-  # 
+  #
   class Roster
     ITEM_ADDED=1
     ITEM_DELETED=2
     RESOURCE_ADDED=4
     RESOURCE_UPDATED=8
     RESOURCE_DELETED=16
-    
+
     # The Jabber::Session instance
     attr_reader :session
-    
+
     ##
     # Creates a Roster for the session
     #
@@ -30,7 +30,7 @@ module Jabber
       @map = {}
       @listeners = {}
     end
-    
+
     ##
     # The RosterItem class embodies another Jabber user's status (from
     # the local user's perspective).  RosterItems contain 
@@ -40,19 +40,19 @@ module Jabber
     class RosterItem
       # The Jabber::Roster instance
       attr_reader :roster
-      
+
       # The Jabber ID (Jabber::JID)
       attr_accessor :jid
-      
+
       # The subscription type
       attr_accessor :subscription
-      
+
       # The (nick)name of this account
       attr_accessor :name
-      
+
       # The group name for this account
       attr_accessor :group
-      
+
       ##
       # Constructs a RosterItem
       #
@@ -69,22 +69,22 @@ module Jabber
         @resources = {}
         @roster = roster
       end
-      
+
       ##
       # The Resource class embodies a Resource endpoint in Jabber.
       # The resource endpoint it what maintains a status (not an account).
       #
       class Resource
-      
+
         # The name of the resource
         attr_reader :name
-        
+
         # How the resource should be shown
         attr_reader :show
-        
+
         # The status message of the resource
         attr_reader :status
-        
+
         ##
         # Constructs a new Resource instance
         #
@@ -99,7 +99,7 @@ module Jabber
           @show = show
           @status = status
         end
-        
+
         ##
         # Updates the state of a resource and notifies listeners.
         #
@@ -111,7 +111,7 @@ module Jabber
           @status = status
           @item.roster.notify_listeners(RESOURCE_UPDATED, self)
         end
-        
+
         ##
         # Dumps the Resource as a string
         #
@@ -121,7 +121,7 @@ module Jabber
           "RESOURCE:#{@name} SHOW:#{@show} STATUS:#{@status}"
         end
       end
-      
+
       ##
       # Retrieves the VCard for this (RosterItem) account.  This method
       # blocks until the the vcard is returned.
@@ -143,7 +143,7 @@ module Jabber
         Thread.stop
         return result
       end
-      
+
       ##
       # Adds a new resource to the Roster item and notifies listeners
       #
@@ -158,7 +158,7 @@ module Jabber
         @roster.notify_listeners(RESOURCE_ADDED, resource)
         resource
       end
-      
+
       ##
       # Deletes a resource from this roster item and notifies listeners
       #
@@ -170,7 +170,7 @@ module Jabber
         @roster.notify_listeners(RESOURCE_DELETED, resource) if resource
         resource
       end
-      
+
       ##
       # Retrieves a resource object
       #
@@ -180,7 +180,7 @@ module Jabber
       def [](resourceName)
         return @resources[resourceName]
       end
-      
+
       ##
       # Iterates over the list of available resources
       #
@@ -189,7 +189,7 @@ module Jabber
       def each_resource
         @resources.each_value {|resource| yield resource}
       end
-      
+
       ##
       # Dumps the roster item
       #
@@ -198,7 +198,7 @@ module Jabber
         "ITEM:#{@jid.to_s} SUBSCRIPTION:#{@subscription} NAME:#{@name} GROUP:#{@group}"
       end
     end
-    
+
     ##
     # Adds a listener to the roster to process roster changes
     #
@@ -210,7 +210,7 @@ module Jabber
       @listeners[id]=block if block
       return id
     end
-    
+
     ##
     # Deletes a listener for processing roster messages
     #
@@ -219,7 +219,7 @@ module Jabber
     def delete_listener(id)
       @listeners.delete(id)
     end
-    
+
     ##
     # Adds a subscription to be tracked in the Roster
     #
@@ -230,10 +230,10 @@ module Jabber
     #
     def add(jid, subscription, name, group=nil)
       if jid.kind_of? String
-        jid = JID.new(jid) 
+        jid = JID.new(jid)
         jid.strip!
       elsif jid.kind_of? JID
-        jid = JID.new(jid.node+"@"+jid.host)
+        jid = JID.new(jid.node+"@"+jid.domain)
       else
         return
       end
@@ -245,7 +245,7 @@ module Jabber
         puts ex.backtrace.join("\n")
       end
     end
-    
+
     ##
     # Returns a Jabber::Roster::RosterItem based on the JID
     #
@@ -254,16 +254,16 @@ module Jabber
     #
     def [](jid)
       if jid.kind_of? String
-        jid = JID.new(jid) 
+        jid = JID.new(jid)
         jid.strip!
       elsif jid.kind_of? JID
-        jid = JID.new(jid.node+"@"+jid.host)
+        jid = JID.new(jid.node+"@"+jid.domain)
       else
         return
       end
       return @map[jid.to_s]
     end
-    
+
     ##
     # Deletes a roster item based on the supplied Jabber ID
     #
@@ -274,7 +274,7 @@ module Jabber
         jid = JID.new(jid) 
         jid.strip!
       elsif jid.kind_of? JID
-        jid = JID.new(jid.node+"@"+jid.host)
+        jid = JID.new(jid.node+"@"+jid.domain)
       else
         return
       end
@@ -282,7 +282,7 @@ module Jabber
       notify_listeners(ITEM_DELETED, item) if item
       item
     end
-    
+
     ##
     # Iterates over each RosterItem
     #
@@ -291,7 +291,7 @@ module Jabber
     def each_item
       @map.each_value {|item| yield item}
     end
-    
+
     ##
     # Dumps the Roster state as a string
     #
@@ -308,15 +308,15 @@ module Jabber
 
     ##
     # Notifies listeners of a roster change event
-    # 
+    #
     # event:: [Integer] The roster event
     # object:: [RosterItem] The modified item
     #
     def notify_listeners(event, object)
       @listeners.each_value {|listener| listener.call(event, object)}
     end
-    
+
   end
-  
+
 end
 

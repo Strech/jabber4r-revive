@@ -16,21 +16,21 @@ module Jabber
   class BoshSession
     # Public: Default connection options
     DEFAULTS = {
-      host: "localhost",
+      domain: "localhost",
       port: 5280,
       bind_uri: "/http-bind"
     }.freeze
 
     attr_reader :stream_id
     attr_reader :jid, :rid, :sid
-    attr_reader :host, :port, :bind_uri
+    attr_reader :domain, :port, :bind_uri
 
     # Public: Create new BOSH-session and bind it to jabber http-bind service
     #
     # username - String the login of jabber server user
     # password - String the password of jabber server user
     # options  - Hash the options for jabber http-bind service (default: Empty hash)
-    #            :host     - String the jabber server host
+    #            :domain     - String the jabber server domain indentificator
     #            :port     - [String|Fixnum] the port of http-bind endpoint of jabber server
     #            :bind_uri - String the http-bind uri
     #
@@ -43,9 +43,9 @@ module Jabber
     # Raises Jabber::AuthenticationError
     # Returns Jabber::BoshSession
     def self.bind(username, password, options = {})
-      host, port, bind_uri = DEFAULTS.dup.merge!(options).values
+      domain, port, bind_uri = DEFAULTS.dup.merge!(options).values
 
-      session = new(host, port, bind_uri)
+      session = new(domain, port, bind_uri)
       raise AuthenticationError, "Failed to login" unless session.authenticate(username, password)
 
       session
@@ -53,7 +53,7 @@ module Jabber
 
     # Public: Create new BOSH-session (not binded to http-bind service)
     #
-    # host     - String the jabber server host
+    # domain     - String the jabber server domain
     # port     - [String|Fixnum] the port of http-bind endpoint of jabber server
     # bind_uri - String the http-bind uri
     #
@@ -62,8 +62,8 @@ module Jabber
     # Jabber::BoshSession.new("localhost", 5280, "/http-bind")
     #
     # Returns Jabber::BoshSession
-    def initialize(host, port, bind_uri)
-      @host, @port, @bind_uri = host, port, bind_uri
+    def initialize(domain, port, bind_uri)
+      @domain, @port, @bind_uri = domain, port, bind_uri
       @alive = false
     end
 
@@ -108,7 +108,7 @@ module Jabber
         element[:xmlns]   = "http://jabber.org/protocol/httpbind"
         element[:content] = "text/xml; charset=utf-8"
         element[:rid]     = generate_next_rid
-        element[:to]      = host
+        element[:to]      = domain
         element[:secure]  = true
         element[:wait]    = 60
         element[:hold]    = 1
@@ -198,7 +198,7 @@ module Jabber
 
       Jabber.debug("Sending POST request - #{body.strip}")
 
-      response = Net::HTTP.new(host, port).start { |http| http.request(request) }
+      response = Net::HTTP.new(domain, port).start { |http| http.request(request) }
 
       Jabber.debug("Receiving POST response - #{response.code}: #{response.body.inspect}")
 

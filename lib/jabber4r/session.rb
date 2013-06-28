@@ -93,8 +93,8 @@ module Jabber
   #
   class Session
 
-    # The host this session is connected to
-    attr_reader :host
+    # The domain this session is connected to
+    attr_reader :domain
 
     # The port (defaults to 5222) that this session is connected to
     attr_reader :port
@@ -129,15 +129,15 @@ module Jabber
     # and announces initial presence.  Login is done via plaintext
     # password authentication.
     #
-    # jid:: [String | JID] The account information ("account@host/resouce")
+    # jid:: [String | JID] The account information ("account@domain/resouce")
     # password:: [String] The account password
-    # port:: [Integer = 5222] The host port
+    # port:: [Integer = 5222] The domain port
     # digest:: [Boolean = false] Use digest authentication?
     # return:: [Jabber::Session] The new session
     #
     def Session.bind(jid, password, port=5222, digest=false)
       jid = Jabber::JID.new(jid) if jid.kind_of? String
-      session = Session.new(jid.host, port)
+      session = Session.new(jid.domain, port)
       raise "Authentication failed" unless session.authenticate(jid.node, password, jid.resource, digest)
       session.request_roster
       session.register_message_filter
@@ -152,7 +152,7 @@ module Jabber
     #
     def Session.register(jid, password, email="", name="", port=5222)
       jid = Jabber::JID.new(jid) if jid.kind_of? String
-      session = Session.new(jid.host, port)
+      session = Session.new(jid.domain, port)
       msg_id = session.id
       registered = false
       current = Thread.current
@@ -178,39 +178,39 @@ module Jabber
     # and announces initial presence.  Login is done via digest (SHA)
     # password authentication.
     #
-    # jid:: [String | JID] The account information ("account@host/resouce")
+    # jid:: [String | JID] The account information ("account@domain/resouce")
     # password:: [String] The account password
-    # port:: [Integer = 5222] The host port
+    # port:: [Integer = 5222] The domain port
     # return:: [Jabber::Session] The new session
     #
     def Session.bind_digest(jid, password, port=5222)
       Session.bind(jid, password, port, true)
     end
 
-    # Creates a new session connected to the supplied host and port.
+    # Creates a new session connected to the supplied domain and port.
     # The method attempts to build a Jabber::Protocol::Connection
     # object and send the open_stream XML message.  It then blocks
     # to recieve the coorisponding reply open_stream and sets the
     # session_id from that xml element.
     #
-    # host:: [String] The hostname of the Jabber service
+    # domain:: [String] The domain indentificator of the Jabber service
     # port:: [Integer=5222] The port of the Jabber service
     # raise:: [RuntimeException] If connection fails
     #
-    def initialize(host, port=5222)
+    def initialize(domain, port=5222)
       @id = 1
-      @host = host
+      @domain = domain
       @port = port
       @roster = Roster.new(self)
       @messageListeners = Hash.new
       @iqHandlers=Hash.new
       @subscriptionHandler = nil
-      @connection = Jabber::Connection.new(host, port)
+      @connection = Jabber::Connection.new(domain, port)
       @connection.connect
       unless @connection.connected?
-        raise "Session Error: Could not connected to #{host}:#{port}"
+        raise "Session Error: Could not connected to #{domain}:#{port}"
       else
-        @connection.send(Jabber::Protocol.gen_open_stream(host)) do |element|
+        @connection.send(Jabber::Protocol.gen_open_stream(domain)) do |element|
           if element.element_tag=="stream:stream"
             element.consume_element
             @session_id = element.attr_id
@@ -262,7 +262,7 @@ module Jabber
       @username = username
       @password = password
       @resource = resource
-      @jid = JID.new("#{username}@#{@host}/#{resource}")
+      @jid = JID.new("#{username}@#{@domain}/#{resource}")
       @roster.add(@jid, "both", "Me", "My Resources")
 
       msg_id = self.id

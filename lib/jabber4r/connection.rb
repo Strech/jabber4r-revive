@@ -14,7 +14,7 @@ module Jabber
     CONNECTED = 2
 
     # Public
-    attr_reader :host, :port, :status, :input, :output
+    attr_reader :domain, :port, :status, :input, :output
 
     # Internal
     attr_reader :poll_thread, :parser_thread
@@ -25,8 +25,8 @@ module Jabber
     # Internal
     attr_reader :socket, :parser
 
-    def initialize(host, port = 5222)
-      @host, @port = host, port
+    def initialize(domain, port = 5222)
+      @domain, @port = domain, port
 
       @handlers, @filters = {}, {}
 
@@ -41,7 +41,7 @@ module Jabber
     #
     # Returns nothing
     def connect
-      @socket = TCPSocket.new(@host, @port)
+      @socket = TCPSocket.new(@domain, @port)
       @parser = Jabber::Protocol.Parser.new(socket, self)
 
       register_parsing_thread

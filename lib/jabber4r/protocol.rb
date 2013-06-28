@@ -50,11 +50,11 @@ module Jabber
     ##
     # Generates an open stream XML element
     #
-    # host:: [String] The host being connected to
+    # domain:: [String] The domain being connected to
     # return:: [String] The XML data to send
     #
-    def self.gen_open_stream(host)
-      return ('<?xml version="1.0" encoding="UTF-8" ?><stream:stream to="'+host+'" xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams">')
+    def self.gen_open_stream(domain)
+      return ('<?xml version="1.0" encoding="UTF-8" ?><stream:stream to="'+domain+'" xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams">')
     end
 
     ##

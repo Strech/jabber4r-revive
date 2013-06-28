@@ -6,9 +6,9 @@
 # Copyright (C) 2013  Sergey Fedorov <strech_ftf@mail.ru>
 
 module Jabber
-  # The Jabber ID class is used to hold a parsed jabber identifier (account+host+resource)
+  # The Jabber ID class is used to hold a parsed jabber identifier (account+domain+resource)
   class JID
-    PATTERN = /^(?:(?<node>[^@]*)@)??(?<host>[^@\/]*)(?:\/(?<resource>.*?))?$/.freeze
+    PATTERN = /^(?:(?<node>[^@]*)@)??(?<domain>[^@\/]*)(?:\/(?<resource>.*?))?$/.freeze
 
     # Public: The node (account)
     attr_accessor :node
@@ -16,8 +16,8 @@ module Jabber
     # Public: The resource id
     attr_accessor :resource
 
-    # Public: The host name (or IP address)
-    attr_accessor :host
+    # Public: The domain indentificator (or IP address)
+    attr_accessor :domain
 
     # Public: Convert something to Jabber::JID
     #
@@ -31,34 +31,34 @@ module Jabber
     end
 
     # Constructs a JID from the supplied string of the format:
-    # node@host[/resource] (e.g. "rich_kilmer@jabber.com/laptop")
+    # node@domain[/resource] (e.g. "rich_kilmer@jabber.com/laptop")
     #
     # jid      - String the jabber id string to parse
-    # host     - String the host of jabber server (optional)
+    # domain     - String the domain of jabber server (optional)
     # resource - String the resource of jabber id (optional)
     #
     # Examples
     #
     # jid = Jabber::JID.new("strech@localhost/attach")
     # jid.node # => "strech"
-    # jid.host # => "localhost"
+    # jid.domain # => "localhost"
     # jid.resource # => "attach"
     #
     # Raises ArgumentError
     # Returns nothing
-    def initialize(jid, host = nil, resource = nil)
+    def initialize(jid, domain = nil, resource = nil)
       raise ArgumentError, "Node can't be empty" if jid.to_s.empty?
 
-      @node, @host, @resource = self.class.parse(jid)
-      @node, @host = @host, nil if @node.nil? && @host
+      @node, @domain, @resource = self.class.parse(jid)
+      @node, @domain = @domain, nil if @node.nil? && @domain
 
-      @host = host unless host.nil?
+      @domain = domain unless domain.nil?
       @resource = resource unless resource.nil?
 
-      raise ArgumentError, "Couldn't create JID without host" if @host.to_s.empty?
+      raise ArgumentError, "Couldn't create JID without domain" if @domain.to_s.empty?
     end
 
-    # Public: Evalutes whether the node, resource and host are the same
+    # Public: Evalutes whether the node, resource and domain are the same
     #
     # jid - Jabber::JID the other jabber id
     #
@@ -75,14 +75,14 @@ module Jabber
     def same?(jid)
       other_jid = self.class.to_jid(jid)
 
-      other_jid.node == node && other_jid.host == host
+      other_jid.node == node && other_jid.domain == domain
     end
 
     # Public: Strip resource from jid and return new object
     #
     # Returns Jabber::JID
     def strip
-      self.class.new(node, host)
+      self.class.new(node, domain)
     end
 
     # Public: Strip resource from jid and return the same object
@@ -98,7 +98,7 @@ module Jabber
     #
     # Returns String
     def to_s
-      ["#{node}@#{host}", resource].compact.join "/"
+      ["#{node}@#{domain}", resource].compact.join "/"
     end
 
     # Public: Override #hash to hash based on the to_s method
@@ -109,7 +109,7 @@ module Jabber
     end
 
     private
-    # Internal: Parse jid string for node, host, resource
+    # Internal: Parse jid string for node, domain, resource
     #
     # jid - String jabber id
     #

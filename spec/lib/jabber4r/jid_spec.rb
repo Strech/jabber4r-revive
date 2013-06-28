@@ -8,19 +8,19 @@ describe Jabber::JID do
         it { expect { described_class.new "user" }.to raise_error ArgumentError }
       end
 
-      context "when node and host given" do
+      context "when node and domain given" do
         subject { described_class.new "user@localhost" }
 
         its(:node) { should eq "user" }
-        its(:host) { should eq "localhost" }
+        its(:domain) { should eq "localhost" }
         its(:resource) { should be_nil }
       end
 
-      context "when node, host and resource given" do
+      context "when node, domain and resource given" do
         subject { described_class.new "user@localhost/attach" }
 
         its(:node) { should eq "user" }
-        its(:host) { should eq "localhost" }
+        its(:domain) { should eq "localhost" }
         its(:resource) { should eq "attach" }
       end
 
@@ -30,26 +30,26 @@ describe Jabber::JID do
     end
 
     context "when extra arguments given" do
-      context "when only host given" do
+      context "when only domain given" do
         subject { described_class.new "user", "localhost" }
 
         its(:node) { should eq "user" }
-        its(:host) { should eq "localhost" }
+        its(:domain) { should eq "localhost" }
       end
 
-      context "when host and resource given" do
+      context "when domain and resource given" do
         subject { described_class.new "user", "localhost", "attach" }
 
         its(:node) { should eq "user" }
-        its(:host) { should eq "localhost" }
+        its(:domain) { should eq "localhost" }
         its(:resource) { should eq "attach" }
       end
 
-      context "when node is fully loaded and host, resource given" do
+      context "when node is fully loaded and domain, resource given" do
         subject { described_class.new "user@example.com/bind", "localhost", "attach" }
 
         its(:node) { should eq "user" }
-        its(:host) { should eq "localhost" }
+        its(:domain) { should eq "localhost" }
         its(:resource) { should eq "attach" }
       end
     end
@@ -97,13 +97,13 @@ describe Jabber::JID do
   end
 
   describe "#to_s" do
-    context "when only host and domain exists" do
+    context "when only domain and domain exists" do
       subject { described_class.new("strech", "localhost").to_s }
 
       it { should eq "strech@localhost" }
     end
 
-    context "when only host and domain exists" do
+    context "when only domain and domain exists" do
       subject { described_class.new("strech", "localhost", "attach-resource").to_s }
 
       it { should eq "strech@localhost/attach-resource" }

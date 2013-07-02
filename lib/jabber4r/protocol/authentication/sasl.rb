@@ -9,7 +9,6 @@ require 'base64'
 
 module Jabber::Protocol::Authentication
   # Class provided SASL authentication on jabber server
-
   class SASL
     # Full list of mechanisms
     # http://www.iana.org/assignments/sasl-mechanisms/sasl-mechanisms.xhtml

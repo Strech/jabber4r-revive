@@ -18,7 +18,6 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
 
   gem.add_dependency "ox", "~> 2.0.4"
-  gem.add_dependency "virtus", "~> 0.5.4"
 
   gem.add_development_dependency "rspec", "~> 2.13.0"
   gem.add_development_dependency "webmock", "~> 1.11.0"

@@ -8,7 +8,6 @@
 require "ox"
 require "json"
 require "net/http"
-require "digest/sha1"
 
 module Jabber
   # XMPP Over BOSH class
@@ -18,34 +17,38 @@ module Jabber
     DEFAULTS = {
       domain: "localhost",
       port: 5280,
-      bind_uri: "/http-bind"
+      bind_uri: "/http-bind",
+      use_sasl: true
     }.freeze
 
-    attr_reader :stream_id
-    attr_reader :jid, :rid, :sid
+    attr_reader :jid
+    attr_accessor :rid, :sid
+
     attr_reader :domain, :port, :bind_uri
+    attr_reader :stream_id, :sasl_mechanisms
 
     # Public: Create new BOSH-session and bind it to jabber http-bind service
     #
     # username - String the login of jabber server user
     # password - String the password of jabber server user
     # options  - Hash the options for jabber http-bind service (default: Empty hash)
-    #            :domain     - String the jabber server domain indentificator
+    #            :domain   - String the jabber server domain indentificator
     #            :port     - [String|Fixnum] the port of http-bind endpoint of jabber server
     #            :bind_uri - String the http-bind uri
-    #
+    #            :use_sasl - boolean the flag defining authentication method
     #
     # Examples
     #
     # Jabber::BoshSession.bind("strech@localhost/res-1", "secret-pass")
-    # Jabber::BoshSession.bind("strech@localhost/res-1", "secret-pass", )
+    # Jabber::BoshSession.bind("strech@localhost/res-1", "secret-pass", domain: "localhost")
     #
     # Raises Jabber::AuthenticationError
     # Returns Jabber::BoshSession
+    # TODO : Change arguments passing into initialize method
     def self.bind(username, password, options = {})
-      domain, port, bind_uri = DEFAULTS.dup.merge!(options).values
+      domain, port, bind_uri, use_sasl = DEFAULTS.dup.merge!(options).values
 
-      session = new(domain, port, bind_uri)
+      session = new(domain, port, bind_uri, use_sasl: use_sasl)
       raise AuthenticationError, "Failed to login" unless session.authenticate(username, password)
 
       session
@@ -62,13 +65,15 @@ module Jabber
     # Jabber::BoshSession.new("localhost", 5280, "/http-bind")
     #
     # Returns Jabber::BoshSession
-    def initialize(domain, port, bind_uri)
+    def initialize(domain, port, bind_uri, options = {})
       @domain, @port, @bind_uri = domain, port, bind_uri
+      @use_sasl = options.fetch(:use_sasl, DEFAULTS[:use_sasl])
       @alive = false
     end
 
     # Public: Authenticate user in jabber server by his username and password
-    # NOTE: This authentication is Non-SASL http://xmpp.org/extensions/xep-0078.html
+    # NOTE: This authentication is SASL http://xmpp.org/rfcs/rfc3920.html#sasl
+    # or Non-SASL http://xmpp.org/extensions/xep-0078.html
     #
     # Examples
     #
@@ -78,10 +83,10 @@ module Jabber
     #
     # Returns boolean
     def authenticate(username, password)
-      open_new_stream
-
       @jid = username.is_a?(JID) ? username : JID.new(username)
-      @alive = login(jid, password)
+
+      authentication = authentication_technology.new(self)
+      @alive = authentication.authenticate(jid, password)
     end
 
     # Public: Is BOSH-session active? (no polling consider)
@@ -91,93 +96,18 @@ module Jabber
       @alive
     end
 
+    # Public: Is BOSH-session uses sasl authentication
+    #
+    # Returns boolean
+    def sasl?
+      @use_sasl
+    end
+
     # Public: Represent BOSH-session as json object
     #
     # Returns String
     def to_json
       {jid: jid.to_s, rid: rid, sid: sid}.to_json
-    end
-
-    private
-    # Internal: Send open stream command to jabber server
-    #
-    # Raises XMLMalformedError
-    # Returns boolean
-    def open_new_stream
-      body = Ox::Element.new("body").tap do |element|
-        element[:xmlns]   = "http://jabber.org/protocol/httpbind"
-        element[:content] = "text/xml; charset=utf-8"
-        element[:rid]     = generate_next_rid
-        element[:to]      = domain
-        element[:secure]  = true
-        element[:wait]    = 60
-        element[:hold]    = 1
-      end
-
-      Jabber.debug(%Q[Open (rid="#{body.rid}") for BOSH session])
-
-      response = post(Ox.dump body)
-      xml = Ox.parse(response.body.tr("'", '"'))
-
-      [:sid, :authid].each do |m|
-        raise XMLMalformedError,
-          "Couldn't find <body /> attribute [#{m}]" if xml[m].nil?
-      end
-
-      @sid, @stream_id = xml.sid, xml.authid
-
-      true
-    end
-
-    # Internal: Send login request to jabber server
-    #
-    # jid - Jabber::JID the jid of jabber user
-    # password - String the password of jabber user
-    #
-    # Raises ArgumentError
-    # Raises XMLMalformedError
-    # Returns boolean
-    def login(jid, password)
-      raise ArgumentError,
-        "Jabber::JID expected, but #{jid.class} was given" unless jid.is_a?(JID)
-
-      query = Ox::Element.new("query").tap do |element|
-        element[:xmlns] = "jabber:iq:auth"
-
-        element << (Ox::Element.new("username") << jid.node)
-        element << (Ox::Element.new("digest")   << generate_digest_for(stream_id, password))
-        element << (Ox::Element.new("resource") << jid.resource)
-      end
-
-      iq = Ox::Element.new("iq").tap do |element|
-        element[:xmlns] = "jabber:client"
-        element[:type]  = "set"
-        element[:id]    = Jabber.gen_random_id
-
-        element << query
-      end
-
-      body = Ox::Element.new("body").tap do |element|
-        element[:xmlns]   = 'http://jabber.org/protocol/httpbind'
-        element[:content] = "text/xml; charset=utf-8"
-        element[:rid]     = generate_next_rid
-        element[:sid]     = sid
-
-        element << iq
-      end
-
-      Jabber.debug(%Q[Login (rid="#{body.rid}" sid="#{body.sid}") in opened BOSH session] +
-                   %Q[ as #{query.username.text}/#{query.resource.text}])
-
-      response = post(Ox.dump body)
-      xml = Ox.parse(response.body.tr("'", '"'))
-
-      raise XMLMalformedError, "Couldn't find xml tag <iq/>" if xml.locate("iq").empty?
-      return false unless xml.iq[:type] == "result"
-
-      @rid = body.rid
-
-      true
     end
 
     # Internal: Send HTTP-post request on HTTP-bind uri
@@ -209,13 +139,6 @@ module Jabber
       response
     end
 
-    # Internal: Generate hex string consist of concatination of all arguments
-    #
-    # Returns String
-    def generate_digest_for(*args)
-      Digest::SHA1.hexdigest(args.join)
-    end
-
     # Internal: Generate next request id for http post request
     #
     # Returns Fixnum
@@ -223,5 +146,247 @@ module Jabber
       @rid ||= rand(1_000_000_000)
       @rid += 1
     end
+
+    private
+    def authentication_technology
+      sasl? ? SASLAuthentication : NonSASLAuthentication
+    end
+
+    # This class provides SASL authentication for BOSH session
+    class SASLAuthentication
+      attr_reader :session
+      attr_reader :mechanisms
+
+      def initialize(session)
+        @session = session
+      end
+
+      # Internal: Send open stream command to jabber server
+      #
+      # Raises XMLMalformedError
+      # Returns boolean
+      def open_stream
+        body = Ox::Element.new("body").tap do |element|
+          element[:xmlns]         = "http://jabber.org/protocol/httpbind"
+          element["xmlns:xmpp"]   = "urn:xmpp:xbosh"
+          element["xmpp:version"] = "1.0"
+          element[:content]       = "text/xml; charset=utf-8"
+          element[:rid]           = session.generate_next_rid
+          element[:to]            = session.domain
+          element[:secure]        = true
+          element[:wait]          = 60
+          element[:hold]          = 1
+        end
+
+        Jabber.debug(%Q[Open (rid="#{body.rid}") new session])
+
+        response = session.post(Ox.dump body)
+        xml = Ox.parse(response.body.tr("'", '"'))
+
+        define_stream_mechanisms(xml)
+
+        raise Jabber::XMLMalformedError,
+          "Couldn't find <body /> attribute [sid]" if xml[:sid].nil?
+
+        session.sid = xml.sid
+
+        true
+      end
+
+      # Internal: Send login request to jabber server
+      #
+      # password - String the password of jabber user
+      #
+      # Raises TypeError
+      # Raises XMLMalformedError
+      # Returns boolean
+      def pass_authentication(password)
+        # TODO : Define different exception type
+        raise TypeError,
+          "Server SASL mechanisms not include PLAIN mechanism" unless mechanisms.include?(:plain)
+
+        options  = {mechanism: :plain}
+        sasl = Jabber::Protocol::Authentication::SASL.new(session.jid, password, options)
+
+        body = Ox::Element.new("body").tap do |element|
+          element[:xmlns]         = 'http://jabber.org/protocol/httpbind'
+          element["xmpp:version"] = "1.0"
+          element["xmlns:xmpp"]   = "urn:xmpp:xbosh"
+          element[:content]       = "text/xml; charset=utf-8"
+          element[:rid]           = session.generate_next_rid
+          element[:sid]           = session.sid
+
+          element << sasl.to_ox
+        end
+
+        Jabber.debug(%Q[Authenticate {SASL} (rid="#{body.rid}" sid="#{body.sid}") in opened session] +
+                     %Q[ as #{session.jid.node}/#{session.jid.resource}])
+
+        response = session.post(Ox.dump body)
+        xml = Ox.parse(response.body.tr("'", '"'))
+
+        return false if xml.locate("success").empty?
+
+        true
+      end
+
+      def restart_stream
+        body = Ox::Element.new("body").tap do |element|
+          element[:xmlns]         = 'http://jabber.org/protocol/httpbind'
+          element["xmlns:xmpp"]   = "urn:xmpp:xbosh"
+          element["xmpp:version"] = "1.0"
+          element["xmpp:restart"] = true
+          element[:content]       = "text/xml; charset=utf-8"
+          element[:rid]           = session.generate_next_rid
+          element[:sid]           = session.sid
+          element[:to]            = session.jid.domain
+        end
+
+        response = session.post(Ox.dump body)
+        xml = Ox.parse(response.body.tr("'", '"'))
+
+        return false if xml.locate("stream:features/bind").empty?
+
+        true
+      end
+
+      def bind_resource
+        bind = Ox::Element.new("bind").tap do |element|
+          element[:xmlns] = "urn:ietf:params:xml:ns:xmpp-bind"
+
+          element << (Ox::Element.new("resource") << session.jid.resource)
+        end
+
+        iq = Ox::Element.new("iq").tap do |element|
+          element[:id]    = Jabber.gen_random_id
+          element[:type]  = "set"
+          element[:xmlns] = "jabber:client"
+
+          element << bind
+        end
+
+        body = Ox::Element.new("body").tap do |element|
+          element[:xmlns]         = 'http://jabber.org/protocol/httpbind'
+          element["xmlns:xmpp"]   = "urn:xmpp:xbosh"
+          element["xmpp:version"] = "1.0"
+          element[:content]       = "text/xml; charset=utf-8"
+          element[:rid]           = session.generate_next_rid
+          element[:sid]           = session.sid
+
+          element << iq
+        end
+
+        response = session.post(Ox.dump body)
+        xml = Ox.parse(response.body.tr("'", '"'))
+
+        raise XMLMalformedError, "Couldn't find xml tag <iq/>" if xml.locate("iq").empty?
+        return false unless xml.iq[:type] == "result"
+
+        true
+      end
+
+      # TODO : Make state machine
+      def authenticate(jid, password)
+        open_stream
+
+        return false if pass_authentication(password) == false
+        return false if restart_stream == false
+
+        bind_resource
+      end
+
+      # Public: ...
+      #
+      # xml - Ox::Element
+      #
+      # Returns Array[Symbol]
+      def define_stream_mechanisms(xml)
+        @mechanisms = xml.locate("stream:features/mechanisms/mechanism/*")
+                         .map(&:downcase).map(&:to_sym)
+      end
+    end
+
+    # This class provides Non-SASL authentication for BOSH session
+    class NonSASLAuthentication
+      attr_reader :session
+      attr_reader :stream_id
+
+      def initialize(session)
+        @session = session
+      end
+
+      def authenticate(jid, password)
+        open_stream
+
+        pass_authentication(jid, password)
+      end
+
+      # Internal: Send open stream command to jabber server
+      #
+      # Raises XMLMalformedError
+      # Returns boolean
+      def open_stream
+        body = Ox::Element.new("body").tap do |element|
+          element[:xmlns]         = "http://jabber.org/protocol/httpbind"
+          element[:content]       = "text/xml; charset=utf-8"
+          element[:rid]           = session.generate_next_rid
+          element[:to]            = session.domain
+          element[:secure]        = true
+          element[:wait]          = 60
+          element[:hold]          = 1
+        end
+
+        Jabber.debug(%Q[Open (rid="#{body.rid}") new session])
+
+        response = session.post(Ox.dump body)
+        xml = Ox.parse(response.body.tr("'", '"'))
+
+        [:sid, :authid].each do |m|
+          raise Jabber::XMLMalformedError,
+            "Couldn't find <body /> attribute [#{m}]" if xml[m].nil?
+        end
+
+        session.sid, @stream_id = xml.sid, xml.authid
+
+        true
+      end
+
+      # Internal: Send login request to jabber server
+      #
+      # jid      - Jabber::JID the jid of jabber user
+      # password - String the password of jabber user
+      #
+      # Raises TypeError
+      # Raises XMLMalformedError
+      # Returns boolean
+      def pass_authentication(jid, password)
+        raise TypeError,
+          "Jabber::JID expected, but #{jid.class} was given" unless jid.is_a?(Jabber::JID)
+
+        options  = {stream_id: stream_id, mechanism: :digest}
+        non_sasl = Jabber::Protocol::Authentication::NonSASL.new(jid, password, options)
+
+        body = Ox::Element.new("body").tap do |element|
+          element[:xmlns]   = 'http://jabber.org/protocol/httpbind'
+          element[:content] = "text/xml; charset=utf-8"
+          element[:rid]     = session.generate_next_rid
+          element[:sid]     = session.sid
+
+          element << non_sasl.to_ox
+        end
+
+        Jabber.debug(%Q[Authenticate {Non-SASL} (rid="#{body.rid}" sid="#{body.sid}") in opened session] +
+                     %Q[ as #{session.jid.node}/#{session.jid.resource}])
+
+        response = session.post(Ox.dump body)
+        xml = Ox.parse(response.body.tr("'", '"'))
+
+        raise Jabber::XMLMalformedError, "Couldn't find xml tag <iq/>" if xml.locate("iq").empty?
+        return false unless xml.iq[:type] == "result"
+
+        true
+      end
+    end # NonSASLAuthentication
+
   end
 end

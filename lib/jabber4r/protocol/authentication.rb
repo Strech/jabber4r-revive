@@ -7,8 +7,8 @@
 
 module Jabber::Protocol
   # Public: This module provide authentication methods for xmpp protocol
-  module Authentication
-  end
+  module Authentication; end
 end
 
 require "jabber4r/protocol/authentication/non_sasl"
+require "jabber4r/protocol/authentication/sasl"

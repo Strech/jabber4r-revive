@@ -19,15 +19,20 @@ module Jabber
 end
 
 require "jabber4r/debugger"
-require "jabber4r/session"
-require "jabber4r/bosh_session"
+
 require "jabber4r/protocol"
 require "jabber4r/connection"
+
 require "jabber4r/protocol/iq"
 require "jabber4r/protocol/presence"
 require "jabber4r/protocol/message"
 require "jabber4r/protocol/xml_element"
 require "jabber4r/protocol/parsed_xml_element"
-require "jabber4r/roster"
+require "jabber4r/protocol/authentication"
+
 require "jabber4r/jid"
+require "jabber4r/session"
+require "jabber4r/bosh_session"
+
+require "jabber4r/roster"
 require "jabber4r/vcard"

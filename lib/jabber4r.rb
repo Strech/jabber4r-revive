@@ -31,6 +31,7 @@ require "jabber4r/protocol/parsed_xml_element"
 require "jabber4r/protocol/authentication"
 
 require "jabber4r/jid"
+require "jabber4r/generators"
 require "jabber4r/session"
 require "jabber4r/bosh_session"
 

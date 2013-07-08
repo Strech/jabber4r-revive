@@ -54,7 +54,7 @@ module Jabber
     # return:: [String] The XML data to send
     #
     def self.gen_open_stream(domain)
-      return ('<?xml version="1.0" encoding="UTF-8" ?><stream:stream to="'+domain+'" xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams">')
+      return ('<?xml version="1.0" encoding="UTF-8" ?><stream:stream to="'+domain+'" xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams" version="1.0">')
     end
 
     ##

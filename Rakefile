@@ -11,7 +11,7 @@ CHANGELOG_PATH = File.join(ROOT_PATH, "CHANGELOG")
 
 # get current version from version.rb file
 def current_version
-  version = File.read(VERSION_PATH).gsub(/[^\d\.]+/, "").strip.chomp
+  version = File.read(VERSION_PATH).match(/VERSION \= \"(\d+\.\d+\.\d+)\"/)[1].strip.chomp
 end
 
 # get released version from git

@@ -33,6 +33,7 @@ require "jabber4r/protocol/authentication"
 require "jabber4r/jid"
 require "jabber4r/bosh"
 require "jabber4r/session"
+require "jabber4r/generators"
 
 require "jabber4r/roster"
 require "jabber4r/vcard"

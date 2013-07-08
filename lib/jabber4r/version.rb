@@ -6,5 +6,5 @@
 # Copyright (C) 2013  Sergey Fedorov <strech_ftf@mail.ru>
 
 module Jabber
-  VERSION = "0.9.0"
+  VERSION = "0.10.0"
 end

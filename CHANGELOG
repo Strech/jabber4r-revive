@@ -1,15 +1,25 @@
 
+v0.10.0
+  - 2013/07/08: fix(changelog) fixed version recognition (Strech (aka Sergey Fedorov))
+  - 2013/07/05: feature(bosh) added authentication via sasl and non-sasl technology (Strech (aka Sergey Fedorov))
+  - 2013/07/02: fix(rfc) added 'version' attribute to plain open stream tag (Strech (aka Sergey Fedorov))
+  - 2013/06/28: chore(gemspec) removed Gemfile.lock (Strech (aka Sergey Fedorov))
+  - 2013/06/28: style(protocol) removed debug information (Strech (aka Sergey Fedorov))
+  - 2013/06/28: refactor(all) change host to domain (Aelphy)
+  - 2013/06/26: style(all) debug methods added (Strech (aka Sergey Fedorov))
+
 v0.9.0
+  - 2013/06/26: Release 0.9.0 (Strech (aka Sergey Fedorov))
   - 2013/06/26: feature(changelog) added changelog file (Strech (aka Sergey Fedorov))
   - 2013/06/26: Jabber::BoshSession : Modified to_json method (Strech (aka Sergey Fedorov))
   - 2013/06/25: Jabber::BoshSession : XMPP over BOSH (XEP-0206) (Strech (aka Sergey Fedorov))
   - 2013/06/20: Jabber::Connection : Change method parse_failure (Strech (aka Sergey Fedorov))
   - 2013/06/20: Jabber::Connection : Refactoring (Strech (aka Sergey Fedorov))
   - 2013/06/20: Rspec : Socket mock changed. Jabber::Connection : Specs for #send (Strech (aka Sergey Fedorov))
+  - 2013/06/20: Jabber::Connection : add_filter and remove_filter refactoring (Strech (aka Sergey Fedorov))
   - 2013/06/20: Rspec : Change rspec dummy text (Strech (aka Sergey Fedorov))
   - 2013/06/20: Jabber::Debugger : Added (Strech (aka Sergey Fedorov))
   - 2013/06/20: Jabber : Moved up on one level (Strech (aka Sergey Fedorov))
-  - 2013/06/20: Jabber::Connection : add_filter and remove_filter refactoring (Strech (aka Sergey Fedorov))
   - 2013/06/20: F (Strech (aka Sergey Fedorov))
   - 2013/06/20: F (Strech (aka Sergey Fedorov))
   - 2013/06/19: Jabber::Connection : New method force_close! added (Strech (aka Sergey Fedorov))

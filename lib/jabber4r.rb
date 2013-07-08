@@ -23,6 +23,7 @@ require "jabber4r/debugger"
 require "jabber4r/protocol"
 require "jabber4r/connection"
 
+require "jabber4r/protocol/stream"
 require "jabber4r/protocol/iq"
 require "jabber4r/protocol/presence"
 require "jabber4r/protocol/message"

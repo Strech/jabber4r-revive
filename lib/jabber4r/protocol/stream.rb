@@ -19,7 +19,7 @@ module Jabber::Protocol
     #
     # Returns String
     def open
-      [head, open_stream] * "\n"
+      [head, open_stream] * ""
     end
 
     # Internal: Generates an close stream XML for session

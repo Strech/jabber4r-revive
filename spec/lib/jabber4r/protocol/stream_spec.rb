@@ -7,7 +7,7 @@ describe Jabber::Protocol::Stream do
   describe "#open" do
     let(:stream) { described_class.new(session) }
 
-    it { expect(stream.open).to eq %Q[<?xml version="1.0" encoding="UTF-8"?>\n<stream:stream xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams" to="localhost" version="1.0">] }
+    it { expect(stream.open).to eq %Q[<?xml version="1.0" encoding="UTF-8"?><stream:stream xmlns="jabber:client" xmlns:stream="http://etherx.jabber.org/streams" to="localhost" version="1.0">] }
   end
 
   describe "#close" do

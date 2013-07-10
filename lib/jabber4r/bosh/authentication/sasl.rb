@@ -73,7 +73,7 @@ module Jabber::Bosh::Authentication
       end
 
       Jabber.debug(%Q[Authenticate {SASL} (rid="#{body.rid}" sid="#{body.sid}") in opened session] +
-                   %Q[ as #{session.jid.node}/#{session.jid.resource}])
+                   %Q[ as #{session.jid}])
 
       response = session.post(Ox.dump body)
       xml = Ox.parse(response.body.tr("'", '"'))

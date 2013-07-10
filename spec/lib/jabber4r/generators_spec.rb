@@ -2,50 +2,45 @@
 require "spec_helper"
 
 describe Jabber::Generators do
-  let(:generators) { Jabber::Generators }
-
   before { SecureRandom.stub(:uuid).and_return "very_secret_phrase" }
 
   describe "::request" do
-    let(:rid) { Jabber::Rid }
+    let(:rid) { Jabber::Generators::Rid }
     let(:rid_object) { double("object") }
 
     before { rid.stub(:new).and_return rid_object }
+    after { described_class.request }
 
-    after { generators.request }
-
-    it { rid.should_receive(:new) }
-    it { expect(generators.request).to eq rid_object }
+    it { expect(described_class.request).to eq rid_object }
   end
 
   describe "::id" do
     context "when prefix is empty" do
-      it { expect(generators.id).to eq "id-very_secret_phrase" }
+      it { expect(described_class.id).to eq "id-very_secret_phrase" }
     end
 
     context "when there is prefix" do
-      it { expect(generators.id("prefix")).to eq "prefix-very_secret_phrase" }
+      it { expect(described_class.id("prefix")).to eq "prefix-very_secret_phrase" }
     end
   end
 
   describe "::iq" do
-    after { generators.iq }
+    after { described_class.iq }
 
-    it { generators.should_receive(:id).with("iq") }
-    it { expect(generators.iq).to eq "iq-very_secret_phrase" }
+    it { expect(described_class.iq).to eq "iq-very_secret_phrase" }
   end
 
   describe "::thread" do
-    after { generators.thread }
+    after { described_class.thread }
 
-    it { expect(generators.thread).to eq "thread-very_secret_phrase" }
+    it { expect(described_class.thread).to eq "thread-very_secret_phrase" }
   end
 end
 
-describe Jabber::Rid do
-  let(:rid) { Jabber::Rid.new }
+describe Jabber::Generators::Rid do
+  let(:rid) { described_class.new }
 
-  before { Random.stub(:new_seed).and_return 1}
+  before { Random.stub(:new_seed).and_return 1 }
 
   describe "#initialize" do
     it { expect(rid.value).to eq 1 }

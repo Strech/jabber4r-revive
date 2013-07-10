@@ -1,8 +1,9 @@
-# License: see LICENSE.txt
-#  Jabber4R - Jabber Instant Messaging Library for Ruby
-#  Copyright (C) 2002  Rich Kilmer <rich@infoether.com>
-#
+# coding: utf-8
 
+# License: see LICENSE
+# Jabber4R - Jabber Instant Messaging Library for Ruby
+# Copyright (C) 2002  Rich Kilmer <rich@infoether.com>
+# Copyright (C) 2013  Sergey Fedorov <strech_ftf@mail.ru>
 
 module Jabber
   HEX = "0123456789abcdef"
@@ -38,55 +39,6 @@ module Jabber
     length.times {prefix += HEX[rand(16),1]}
     prefix
   end
-
-  class Subscription
-    attr_accessor :type, :from, :id, :session
-    def initialize(session, type, from, id)
-      @session = session
-      @type = type
-      @from = from
-      @id = id
-    end
-    def accept
-      case type
-      when :subscribe
-        @session.connection.send(Jabber::Protocol::Presence.gen_accept_subscription(@id, @from))
-      when :unsubscribe
-        @session.connection.send(Jabber::Protocol::Presence.gen_accept_unsubscription(@id, @from))
-      else
-        raise "Cannot accept a subscription of type #{type.to_s}"
-      end
-    end
-  end
-
-  ##
-  # This is a base class for subscription handlers
-
-  class SubscriptionHandler
-    def subscribe(subscription)
-    end
-
-    def subscribed(subscription)
-    end
-
-    def unsubscribe(subscription)
-    end
-
-    def unsubscribed(subscription)
-    end
-  end
-
-  class AutoSubscriptionHandler < SubscriptionHandler
-
-    def subscribe(subscription)
-      subscription.accept
-    end
-
-    def unsubscribe(subscription)
-      subscription.accept
-    end
-  end
-
 
   ##
   # The Jabber Session is the main class for dealing with a Jabber service.
@@ -357,7 +309,7 @@ module Jabber
     end
 
     def enable_autosubscription
-      set_subscription_handler AutoSubscriptionHandler
+      set_subscription_handler Jabber::AutoSubscriptionHandler
     end
 
     def subscribe(to, name="")
@@ -417,9 +369,9 @@ module Jabber
             from = JID.new(element.attr_from)
             break unless @subscriptionHandler
             if @subscriptionHandler.kind_of? Proc
-              @subscriptionHandler.call(Subscription.new(self, type.intern, from, id))
+              @subscriptionHandler.call(Jabber::Subscription.new(self, type.intern, from, id))
             else
-              @subscriptionHandler.send(Subscription.new(self, type.intern, from, id))
+              @subscriptionHandler.send(Jabber::Subscription.new(self, type.intern, from, id))
             end
           end
         end #if presence

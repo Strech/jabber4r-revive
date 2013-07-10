@@ -8,19 +8,6 @@ require "singleton"
 require "socket"
 
 module Jabber
-  class JabberConnectionException < RuntimeError
-    attr_reader :data
-
-    def initialize(writing, data)
-      @writing = writing
-      @data = data
-    end
-
-    def writing?
-      @writing
-    end
-  end
-
   ##
   # The Protocol module contains helper methods for constructing
   # Jabber protocol elements and classes that implement protocol

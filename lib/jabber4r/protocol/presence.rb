@@ -113,7 +113,7 @@ module Jabber::Protocol
     end
 
     def self.gen_new_subscription(to)
-      p = Presence.new(Jabber.gen_random_id)
+      p = Presence.new(Jabber::Generators.id)
       p.type = "subscribe"
       p.to = to
       p

@@ -87,7 +87,7 @@ module Jabber
     # digest:: [Boolean = false] Use digest authentication?
     # return:: [Jabber::Session] The new session
     #
-    def Session.bind(jid, password, port=5222, digest=false)
+    def self.bind(jid, password, port=5222, digest=false)
       jid = Jabber::JID.new(jid) if jid.kind_of? String
       session = Session.new(jid.domain, port)
       raise "Authentication failed" unless session.authenticate(jid.node, password, jid.resource, digest)
@@ -102,7 +102,7 @@ module Jabber
     ##
     # Account registration method
     #
-    def Session.register(jid, password, email="", name="", port=5222)
+    def self.register(jid, password, email="", name="", port=5222)
       jid = Jabber::JID.new(jid) if jid.kind_of? String
       session = Session.new(jid.domain, port)
       msg_id = session.id
@@ -135,7 +135,7 @@ module Jabber
     # port:: [Integer = 5222] The domain port
     # return:: [Jabber::Session] The new session
     #
-    def Session.bind_digest(jid, password, port=5222)
+    def self.bind_digest(jid, password, port=5222)
       Session.bind(jid, password, port, true)
     end
 

@@ -2,19 +2,13 @@
 require "spec_helper"
 
 describe Jabber::Bosh::Session do
-  class RidMock
-    def initialize
-      @rids = (2..5).to_a
-    end
-
-    def next
-      @rids.shift
-    end
-  end
+  let(:rid) { double "Rid" }
 
   before do
-    RidMock.any_instance.stub(:to_s).and_return "3"
-    Jabber::Generators.stub(:request).and_return RidMock.new
+    rid.stub(:next).and_return(2,3,4,5)
+    rid.stub(:to_s).and_return "3"
+
+    Jabber::Generators.stub(:request).and_return rid
   end
 
   describe "#bind" do

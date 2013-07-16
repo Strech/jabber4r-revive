@@ -2,7 +2,14 @@
 require "spec_helper"
 
 describe Jabber::Bosh::Session do
-  before { described_class.any_instance.stub(:rand).and_return 1 }
+  let(:rid) { double "Rid" }
+
+  before do
+    rid.stub(:next).and_return(2,3,4,5)
+    rid.stub(:to_s).and_return "3"
+
+    Jabber::Generators.stub(:request).and_return rid
+  end
 
   describe "#bind" do
     context "when server accept sasl authentication" do
@@ -400,7 +407,7 @@ describe Jabber::Bosh::Session do
     it { expect(json).to have_key "sid" }
 
     it { expect(json["jid"]).to eq "strech@localhost/resource"}
-    it { expect(json["rid"]).to eq 3}
+    it { expect(json["rid"]).to eq "3"}
     it { expect(json["sid"]).to eq "ce21410"}
   end
 end

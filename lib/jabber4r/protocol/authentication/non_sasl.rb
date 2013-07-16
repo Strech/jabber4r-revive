@@ -122,7 +122,7 @@ module Jabber::Protocol::Authentication
       Ox::Element.new("iq").tap do |element|
         element[:xmlns] = "jabber:client"
         element[:type]  = "set"
-        element[:id]    = Jabber.gen_random_id
+        element[:id]    = Jabber::Generators.id
 
         element << query
       end

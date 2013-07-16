@@ -45,7 +45,7 @@ describe Jabber::Bosh::Authentication::NonSASL::Query do
       '<resource>my-resource</resource></query></iq>'
     end
 
-    before { Jabber.stub(:gen_random_id).and_return "auth2" }
+    before { Jabber::Generators.stub(:id).and_return "auth2" }
 
     it { expect(auth_xml).to eq correct_xml }
   end
@@ -59,7 +59,7 @@ describe Jabber::Bosh::Authentication::NonSASL::Query do
       '<resource>my-resource</resource></query></iq>'
     end
 
-    before { Jabber.stub(:gen_random_id).and_return "auth2" }
+    before { Jabber::Generators.stub(:id).and_return "auth2" }
     before { described_class.stub(:generate_digest).and_return "0123456789" }
 
     it { expect(auth_xml).to eq correct_xml }

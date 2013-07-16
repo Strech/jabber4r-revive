@@ -98,7 +98,7 @@ module Jabber::Bosh
     #
     # Returns String
     def to_json
-      {jid: jid.to_s, rid: rid, sid: sid}.to_json
+      {jid: jid.to_s, rid: rid.to_s, sid: sid}.to_json
     end
 
     # Internal: Send HTTP-post request on HTTP-bind uri
@@ -126,14 +126,11 @@ module Jabber::Bosh
       response
     end
 
-    # Internal: Generate next request id for http post request
+    # Internal: Generate request id object for http post request
     #
-    # FIXME : Will be replaced to Generator class
-    #
-    # Returns Fixnum
-    def generate_next_rid
-      @rid ||= rand(1_000_000_000)
-      @rid += 1
+    # Returns Jabber::Generators::Rid
+    def request_id
+      @rid ||= Jabber::Generators.request
     end
 
     private

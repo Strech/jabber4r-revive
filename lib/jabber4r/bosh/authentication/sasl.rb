@@ -27,7 +27,7 @@ module Jabber::Bosh::Authentication
         element["xmlns:xmpp"]   = "urn:xmpp:xbosh"
         element["xmpp:version"] = "1.0"
         element[:content]       = "text/xml; charset=utf-8"
-        element[:rid]           = session.generate_next_rid
+        element[:rid]           = session.request_id.next
         element[:to]            = session.domain
         element[:secure]        = true
         element[:wait]          = 60
@@ -66,7 +66,7 @@ module Jabber::Bosh::Authentication
         element["xmpp:version"] = "1.0"
         element["xmlns:xmpp"]   = "urn:xmpp:xbosh"
         element[:content]       = "text/xml; charset=utf-8"
-        element[:rid]           = session.generate_next_rid
+        element[:rid]           = session.request_id.next
         element[:sid]           = session.sid
 
         element << Query.new(session.jid, password, mechanism: :plain).to_ox
@@ -90,7 +90,7 @@ module Jabber::Bosh::Authentication
         element["xmpp:version"] = "1.0"
         element["xmpp:restart"] = true
         element[:content]       = "text/xml; charset=utf-8"
-        element[:rid]           = session.generate_next_rid
+        element[:rid]           = session.request_id.next
         element[:sid]           = session.sid
         element[:to]            = session.jid.domain
       end
@@ -111,7 +111,7 @@ module Jabber::Bosh::Authentication
       end
 
       iq = Ox::Element.new("iq").tap do |element|
-        element[:id]    = Jabber.gen_random_id
+        element[:id]    = Jabber::Generators.id
         element[:type]  = "set"
         element[:xmlns] = "jabber:client"
 
@@ -123,7 +123,7 @@ module Jabber::Bosh::Authentication
         element["xmlns:xmpp"]   = "urn:xmpp:xbosh"
         element["xmpp:version"] = "1.0"
         element[:content]       = "text/xml; charset=utf-8"
-        element[:rid]           = session.generate_next_rid
+        element[:rid]           = session.request_id.next
         element[:sid]           = session.sid
 
         element << iq

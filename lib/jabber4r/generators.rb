@@ -54,7 +54,7 @@ module Jabber
       attr_reader :value
 
       def initialize
-        @value = Random.new_seed
+        @value = rand(1_000_000_000)
       end
 
       # Increments rid value
@@ -62,6 +62,13 @@ module Jabber
       # Returns Bignum
       def next
         @value = value.next
+      end
+
+      # Rid value to_s
+      #
+      # Returns String
+      def to_s
+        value.to_s
       end
     end
   end

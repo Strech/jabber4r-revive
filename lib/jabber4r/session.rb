@@ -6,40 +6,6 @@
 # Copyright (C) 2013  Sergey Fedorov <strech_ftf@mail.ru>
 
 module Jabber
-  HEX = "0123456789abcdef"
-
-  ##
-  # Generates a random hex string in the following format:
-  #   JRR_01234567
-  #
-  # return:: [String] The resource id
-  #
-  def Jabber.gen_random_resource
-    return Jabber.gen_random_id("JRR_", 8)
-  end
-
-  ##
-  # Generates a random thread as a hex string in the following format:
-  #   JRT_01234567890123456789
-  #
-  # return:: [String] The thread id
-  #
-  def Jabber.gen_random_thread
-    return Jabber.gen_random_id("JRT_", 20)
-  end
-
-  ##
-  # Generates a random id as a hex string
-  #
-  # prefix:: [String="Jabber4R_] The prefix for the random hex data
-  # length:: [Integer=16] The number of hex characters
-  # return:: [String] The random id
-  #
-  def Jabber.gen_random_id(prefix="Jabber4R_", length=16)
-    length.times {prefix += HEX[rand(16),1]}
-    prefix
-  end
-
   ##
   # The Jabber Session is the main class for dealing with a Jabber service.
   #
@@ -437,7 +403,7 @@ module Jabber
     # return:: [String] The listener ID...used to remove the listener
     #
     def add_message_listener(&block)
-      id = Jabber.gen_random_id("", 10)
+      id = Jabber::Generators.id
       @messageListeners[id]=block if block
       return id
     end

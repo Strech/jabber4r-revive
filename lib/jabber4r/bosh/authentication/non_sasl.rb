@@ -34,7 +34,7 @@ module Jabber::Bosh::Authentication
       body = Ox::Element.new("body").tap do |element|
         element[:xmlns]   = "http://jabber.org/protocol/httpbind"
         element[:content] = "text/xml; charset=utf-8"
-        element[:rid]     = session.generate_next_rid
+        element[:rid]     = session.request_id.next
         element[:to]      = session.domain
         element[:secure]  = true
         element[:wait]    = 60
@@ -71,7 +71,7 @@ module Jabber::Bosh::Authentication
       body = Ox::Element.new("body").tap do |element|
         element[:xmlns]   = 'http://jabber.org/protocol/httpbind'
         element[:content] = "text/xml; charset=utf-8"
-        element[:rid]     = session.generate_next_rid
+        element[:rid]     = session.request_id.next
         element[:sid]     = session.sid
 
         element << Query.new(jid, password, stream_id: stream_id, mechanism: :digest).to_ox
@@ -202,7 +202,7 @@ module Jabber::Bosh::Authentication
         Ox::Element.new("iq").tap do |element|
           element[:xmlns] = "jabber:client"
           element[:type]  = "set"
-          element[:id]    = Jabber.gen_random_id
+          element[:id]    = Jabber::Generators.id
 
           element << query
         end

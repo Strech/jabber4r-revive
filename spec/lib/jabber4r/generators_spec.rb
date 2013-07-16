@@ -40,7 +40,7 @@ end
 describe Jabber::Generators::Rid do
   let(:rid) { described_class.new }
 
-  before { Random.stub(:new_seed).and_return 1 }
+  before { Jabber::Generators::Rid.any_instance.stub(:rand).and_return 1 }
 
   describe "#initialize" do
     it { expect(rid.value).to eq 1 }
@@ -54,5 +54,11 @@ describe Jabber::Generators::Rid do
     before { rid.next }
 
     it { expect(rid.value).to eq 2 }
+  end
+
+  describe "#to_s" do
+    before { rid.stub(:value).and_return 3 }
+
+    it { expect(rid.to_s).to eq "3" }
   end
 end

@@ -215,7 +215,7 @@ module Jabber::Protocol
     # return:: [String] The XML string.
     #
     def to_xml
-      @thread = Jabber.gen_random_thread if @thread.nil? and (not @is_reply)
+      @thread = Jabber::Generators.thread if @thread.nil? and (not @is_reply)
       elem = XMLElement.new("message", {"to"=>@to, "type"=>@type})
       elem.add_attribute("id", @id) if @id
       elem.add_child("thread").add_data(@thread) if @thread

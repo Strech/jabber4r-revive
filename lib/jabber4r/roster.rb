@@ -206,7 +206,7 @@ module Jabber
     # return:: [String] The listener id to use to deregister
     #
     def add_listener(&block)
-      id = Jabber.gen_random_id("", 10)
+      id = Jabber::Generators.id
       @listeners[id]=block if block
       return id
     end
